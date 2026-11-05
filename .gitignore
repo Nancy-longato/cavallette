@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+.env.local
+tsconfig.check.json
+# Esempi reali (DDT con nomi di clienti, export di Smartsheet): restano solo sul tuo computer
+samples/
+*.log
+.DS_Store
