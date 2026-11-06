@@ -46,7 +46,7 @@ describe('Excel Smartsheet reale', { skip: !fs.existsSync(XLSX) }, () => {
     const l = leggiSmartsheet(fogli);
     assert.equal(l.foglio, 'Test Automazioni');
     assert.deepEqual(l.colonneMancanti, []);
-    assert.equal(l.haDataUscita, false);
+    assert.equal(l.haDataCons, false);
     assert.equal(l.righe.length, 7);
     assert.equal(l.righe[0].commessa, '26031-P');
     assert.equal(l.righe[2].commessa, '26033', 'i numeri diventano testo senza ".0"');

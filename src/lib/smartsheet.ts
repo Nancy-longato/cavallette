@@ -21,13 +21,13 @@ export interface RigaSmartsheet {
   cavallette: string; // testo grezzo della colonna NUMERO CAVALLETTE
   ddtCons: boolean;
   ddtRientro: boolean;
-  dataUscita: string | null; // YYYY-MM-DD
+  dataCons: string | null; // YYYY-MM-DD, solo se la colonna «DDT cons. rientrato» contiene una data
 }
 
 export interface LetturaSmartsheet {
   righe: RigaSmartsheet[];
   colonneMancanti: string[];
-  haDataUscita: boolean;
+  haDataCons: boolean;
   foglio: string;
 }
 
@@ -50,7 +50,6 @@ const ALIAS = {
   cavallette: ['NUMERO CAVALLETTE', 'N CAVALLETTE', 'CAVALLETTE', 'NUMERO CAVALLETTA'],
   ddtCons: ['DDT CONS RIENTRATO', 'DDT CONSEGNA RIENTRATO'],
   ddtRientro: ['DDT RIENTRO', 'DDT RIENTRO CAVALLETTA', 'DDT RIENTRO CAVALLETTE'],
-  dataUscita: ['DATA USCITA', 'DATA USCITA CAVALLETTE', 'DATA USCITA MERCE'],
 } as const;
 
 type Campo = keyof typeof ALIAS;
@@ -97,7 +96,7 @@ export function leggiSmartsheet(fogli: Foglio[]): LetturaSmartsheet {
     return {
       righe: [],
       colonneMancanti: OBBLIGATORI.map((o) => o.nome),
-      haDataUscita: false,
+      haDataCons: false,
       foglio: fogli[0]?.nome ?? '',
     };
   }
@@ -130,12 +129,13 @@ export function leggiSmartsheet(fogli: Foglio[]): LetturaSmartsheet {
       indirizzo,
       imballo: aBooleano(val(r, 'imballo')),
       cavallette: cellaInTesto(val(r, 'cavallette')),
-      ddtCons: aBooleano(val(r, 'ddtCons')),
+      // «DDT cons. rientrato» può essere una spunta oppure una data: una data vale come spunta
+      ddtCons: aBooleano(val(r, 'ddtCons')) || aDataIso(val(r, 'ddtCons')) !== null,
       ddtRientro: aBooleano(val(r, 'ddtRientro')),
-      dataUscita: aDataIso(val(r, 'dataUscita')),
+      dataCons: aDataIso(val(r, 'ddtCons')),
     });
   }
-  return { righe, colonneMancanti, haDataUscita: col.dataUscita >= 0, foglio: foglio.nome };
+  return { righe, colonneMancanti, haDataCons: righe.some((x) => x.dataCons !== null), foglio: foglio.nome };
 }
 
 // ---------------------------------------------------------------------------
@@ -223,7 +223,7 @@ export function pianificaImport(righe: RigaSmartsheet[], stato: StatoImport, opz
     if (fase === 0) continue;
     const chiavi = spezzaCavallette(riga.cavallette);
     if (!chiavi.length) continue;
-    if (opz.dal && riga.dataUscita && riga.dataUscita < opz.dal) {
+    if (opz.dal && riga.dataCons && riga.dataCons < opz.dal) {
       piano.riepilogo.escluse++;
       continue;
     }
@@ -262,8 +262,8 @@ export function pianificaImport(righe: RigaSmartsheet[], stato: StatoImport, opz
           commessa: riga.commessa,
           cliente: riga.cliente,
           indirizzo: riga.indirizzo,
-          data_uscita: riga.dataUscita,
-          data_consegna: fase === 2 ? (riga.dataUscita ?? opz.oggi) : null,
+          data_uscita: null,
+          data_consegna: fase === 2 ? (riga.dataCons ?? opz.oggi) : null,
           contenuto: null,
         };
       } else if (assegnataQui) {
@@ -295,8 +295,8 @@ export function pianificaImport(righe: RigaSmartsheet[], stato: StatoImport, opz
         fase,
         cliente: riga.cliente,
         indirizzo: riga.indirizzo,
-        data_uscita: riga.dataUscita ?? esistente?.data_uscita ?? null,
-        data_consegna: fase === 2 ? (riga.dataUscita ?? opz.oggi) : (esistente?.data_consegna ?? null),
+        data_uscita: null,
+        data_consegna: fase === 2 ? (riga.dataCons ?? opz.oggi) : (esistente?.data_consegna ?? null),
         data_rientro: fase === 3 ? opz.oggi : null,
       });
       piano.risolte.push({ numero: chiave, commessa: riga.commessa });

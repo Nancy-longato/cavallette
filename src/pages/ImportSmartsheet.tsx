@@ -101,13 +101,13 @@ export default function ImportSmartsheet() {
           <h2>Anteprima</h2>
           <p className="sotto">Foglio «{lettura.foglio}» · {lettura.righe.length} commesse lette · {piano.riepilogo.righeConCavallette} con cavallette da considerare</p>
 
-          {!lettura.haDataUscita && (
+          {!lettura.haDataCons && (
             <Messaggio tipo="info">
-              Nel file non c'è la colonna «DATA USCITA»: i 10 giorni per il ritiro partono dal giorno in cui carichi il file. Aggiungendo la colonna in Smartsheet saranno precisi.
+              In «DDT cons. rientrato» non ci sono date, solo spunte: i 10 giorni per il ritiro partono dal giorno in cui la spunta viene vista per la prima volta (il giorno in cui carichi il file). Se in Smartsheet metti la data di quel DDT in quella colonna, i giorni saranno precisi.
             </Messaggio>
           )}
-          {lettura.haDataUscita && (
-            <label className="form">Considera solo le commesse con data uscita dal (utile al primo import, per saltare lo storico vecchio)
+          {lettura.haDataCons && (
+            <label className="form">Considera solo le commesse con DDT cons. rientrato dal (utile al primo import, per saltare lo storico vecchio)
               <input type="date" value={dal} onChange={(e) => setDal(e.target.value)} />
             </label>
           )}

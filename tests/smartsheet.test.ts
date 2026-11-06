@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pianificaImport } from '../src/lib/smartsheet.ts';
+import { leggiSmartsheet, pianificaImport } from '../src/lib/smartsheet.ts';
 import type { RigaSmartsheet, StatoImport, Piano } from '../src/lib/smartsheet.ts';
 import type { Cavalletta } from '../src/lib/types.ts';
 
@@ -18,7 +18,7 @@ function cav(id: string, numero: string, extra: Partial<Cavalletta> = {}): Caval
 function riga(extra: Partial<RigaSmartsheet>): RigaSmartsheet {
   return {
     commessa: '26033', cliente: 'MASIERO GIADA', indirizzo: 'Via Verdi 1, SPINEA (VE)', imballo: false,
-    cavallette: '', ddtCons: false, ddtRientro: false, dataUscita: null, ...extra,
+    cavallette: '', ddtCons: false, ddtRientro: false, dataCons: null, ...extra,
   };
 }
 
@@ -57,7 +57,7 @@ test('IMBALLO: piazzale, piena (serramenti), commessa e cliente abbinati a tutte
 test('DDT cons. rientrato: luogo = cliente con indirizzo; la data di consegna è quella di uscita se presente', () => {
   let s = statoIniziale();
   s = applica(s, pianificaImport([riga({ imballo: true, cavallette: '62;P136' })], s, { oggi: '2026-11-02' }));
-  const p = pianificaImport([riga({ imballo: true, ddtCons: true, cavallette: '62;P136', dataUscita: '2026-11-03' })], s, { oggi: OGGI });
+  const p = pianificaImport([riga({ imballo: true, ddtCons: true, cavallette: '62;P136', dataCons: '2026-11-03' })], s, { oggi: OGGI });
   s = applica(s, p);
   for (const c of s.cavallette) {
     assert.equal(c.luogo, 'cliente');
@@ -168,8 +168,8 @@ test('riga storica già chiusa (con rientro) su una cavalletta libera non la toc
 
 test('filtro "dal": le righe con data uscita precedente vengono ignorate', () => {
   const righe = [
-    riga({ commessa: 'VECCHIA', imballo: true, cavallette: '62', dataUscita: '2025-06-01' }),
-    riga({ commessa: 'NUOVA', imballo: true, cavallette: 'P136', dataUscita: '2026-11-02' }),
+    riga({ commessa: 'VECCHIA', imballo: true, cavallette: '62', dataCons: '2025-06-01' }),
+    riga({ commessa: 'NUOVA', imballo: true, cavallette: 'P136', dataCons: '2026-11-02' }),
   ];
   const p = pianificaImport(righe, statoIniziale(), { oggi: OGGI, dal: '2026-10-01' });
   assert.equal(p.riepilogo.escluse, 1);
@@ -205,4 +205,21 @@ test('numeri con trattino: "P-E82", "p e82" e "PE82" in Smartsheet trovano la st
     assert.equal(p.azioni.length, 1, scritto);
     assert.equal(p.azioni[0].numero, 'P-E82');
   }
+});
+
+test('«DDT cons. rientrato» con una data: vale come spunta e dà la data di consegna', () => {
+  const l = leggiSmartsheet([
+    {
+      nome: 'Foglio',
+      righe: [
+        ['COMMESSA', 'CLIENTE', 'IMBALLO', 'NUMERO CAVALLETTE', 'DDT cons. rientrato', 'DDT RIENTRO'],
+        ['A1', 'Rossi', 'true', '62', '15/10/26', null],
+        ['A2', 'Bianchi', 'true', 'P136', 'true', null],
+        ['A3', 'Verdi', 'true', '63', null, null],
+      ],
+    },
+  ]);
+  assert.deepEqual(l.colonneMancanti, []);
+  assert.equal(l.haDataCons, true);
+  assert.deepEqual(l.righe.map((r) => [r.ddtCons, r.dataCons]), [[true, '2026-10-15'], [true, null], [false, null]]);
 });

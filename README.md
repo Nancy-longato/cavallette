@@ -58,7 +58,7 @@ Non mettere mai la chiave `service_role` nell'app.
   - DDT cons. rientrato → dal cliente
   - DDT RIENTRO → piazzale, vuota, commessa/cliente/indirizzo cancellati
   - Cavalletta non in anagrafica → **Segnalazione**
-  - Colonne lette per nome: COMMESSA, CLIENTE, INDIRIZZO CANTIERE / PAESE / PROVINCIA, IMBALLO, NUMERO CAVALLETTE, DDT cons. rientrato, DDT RIENTRO e, se la aggiungi, **DATA USCITA**. Con DATA USCITA i 10 giorni partono dalla data vera, altrimenti dal giorno dell'import.
+  - Colonne lette per nome: COMMESSA, CLIENTE, INDIRIZZO CANTIERE / PAESE / PROVINCIA, IMBALLO, NUMERO CAVALLETTE, DDT cons. rientrato, DDT RIENTRO. Se «DDT cons. rientrato» contiene una data (invece di una spunta), quella è la data di consegna al cliente e da lì partono i 10 giorni lavorativi; se è una semplice spunta, partono dal giorno in cui carichi il file.
   - Al primo import usa il filtro «dal» per saltare lo storico vecchio.
 - **Da ritirare**: dopo 10 giorni *lavorativi* (esclusi sabati, domeniche, festivi italiani e chiusure aziendali) dalla consegna. Soglia e chiusure si cambiano in **Impostazioni**. Il magazziniere non la vede.
 - **Restituzione** (magazziniere): sceglie la vetreria, spunta le cavallette, Invia. Spariscono dal cruscotto e restano nello **Storico** (data + elenco).
