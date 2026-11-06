@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useAuth } from '../lib/auth.tsx';
-import { Messaggio } from '../components/ui.tsx';
+import { LOGO, Messaggio } from '../components/ui.tsx';
 
 export default function Login() {
   const { accedi } = useAuth();
@@ -26,8 +26,8 @@ export default function Login() {
   return (
     <div className="login">
       <form className="card form" onSubmit={(e) => void invia(e)}>
-        <h1>Cavallette</h1>
-        <p className="sotto">Serramenti Longato · gestione cavallette</p>
+        <img className="login-logo" src={LOGO} alt="Longato serramenti PVC alluminio" width={120} height={120} />
+        <h1>Gestione cavallette</h1>
         {errore && <Messaggio tipo="errore">{errore}</Messaggio>}
         <label>Email<input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
         <label>Password<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>

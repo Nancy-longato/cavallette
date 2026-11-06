@@ -16,7 +16,7 @@ import Restituzione from './pages/Restituzione.tsx';
 import Storico from './pages/Storico.tsx';
 import Utenti from './pages/Utenti.tsx';
 import Impostazioni from './pages/Impostazioni.tsx';
-import { Messaggio } from './components/ui.tsx';
+import { LOGO, Messaggio } from './components/ui.tsx';
 
 interface Rotta {
   path: string;
@@ -72,7 +72,10 @@ function Guscio() {
   return (
     <div className="guscio">
       <header className="testa">
-        <div className="marchio">Cavallette</div>
+        <div className="marchio">
+          <img src={LOGO} alt="Longato" width={42} height={42} />
+          <span>Cavallette</span>
+        </div>
         <nav className="nav">
           {permesse.map((r) => (
             <Link key={r.path} to={r.path} className={`voce ${corrente?.path === r.path ? 'attiva' : ''}`}>

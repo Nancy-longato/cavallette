@@ -91,10 +91,12 @@ export default function Restituzione() {
             <h2>{nomeVetreria(scelta)}</h2>
             <button className="btn" onClick={() => setScelta(null)}>← Cambia vetreria</button>
           </div>
-          <div className="riga-bottoni">
-            <button className="btn" onClick={() => setSpuntate(new Set(lista.map((c) => c.id)))}>Seleziona tutte</button>
-            <button className="btn" onClick={() => setSpuntate(new Set())}>Nessuna</button>
-          </div>
+          {lista.length > 0 && (
+            <div className="riga-bottoni">
+              <button className="btn" onClick={() => setSpuntate(new Set(lista.map((c) => c.id)))}>Seleziona tutte</button>
+              <button className="btn" onClick={() => setSpuntate(new Set())}>Nessuna</button>
+            </div>
+          )}
           {lista.length === 0 && (
             <p className="vuoto">Nessuna cavalletta vuota di {nomeVetreria(scelta)} da restituire adesso. Una cavalletta diventa restituibile quando è in piazzale e vuota (dopo il «DDT RIENTRO» di Smartsheet).</p>
           )}
@@ -111,7 +113,7 @@ export default function Restituzione() {
           {altre.length > 0 && (
             <>
               <h3>Non ancora restituibili</h3>
-              <ul className="spunte">
+              <ul className="spunte bloccate">
                 {altre.map((c) => (
                   <li key={c.id}>
                     <label className="spunta disattiva" title="Non è vuota in piazzale">

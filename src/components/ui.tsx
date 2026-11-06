@@ -25,3 +25,6 @@ export function Titolo(props: { titolo: string; sotto?: string; azioni?: ReactNo
 export function dataOra(iso: string): string {
   return new Date(iso).toLocaleString('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'short', timeStyle: 'short' });
 }
+
+/** Logo Longato (cartella public/) */
+export const LOGO = `${import.meta.env.BASE_URL}logo.png`;
