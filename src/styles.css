@@ -139,6 +139,7 @@ summary { cursor: pointer; }
 .btn-vetreria { display: flex; justify-content: space-between; align-items: center; font-size: 1.2rem; }
 .spunte { list-style: none; padding: 0; margin: 0.5rem 0 5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.6rem; }
 .spunta { flex-direction: row; align-items: center; gap: 0.7rem; padding: 0.9rem 1rem; background: var(--carta); border: 2px solid var(--bordo); border-radius: var(--raggio); font-size: 1.15rem; color: var(--testo); cursor: pointer; }
+.spunta.disattiva { opacity: 0.55; cursor: not-allowed; background: var(--sfondo, #f4f5f7); }
 .spunta.attiva { border-color: var(--primario); background: var(--blu-bg); }
 .spunta input { width: 1.4rem; height: 1.4rem; }
 .invia { position: sticky; bottom: 1rem; width: 100%; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18); }

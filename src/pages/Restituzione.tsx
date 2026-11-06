@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { restituisci } from '../lib/api.ts';
 import { confrontaNumeri } from '../lib/keys.ts';
+import { etichettaLuogo, etichettaStato } from '../lib/logica.ts';
 import { useDati } from '../lib/dati.tsx';
 import { Messaggio, Titolo } from '../components/ui.tsx';
 
-// Schermata del magazziniere: solo le cavallette vuote, in piazzale, da restituire.
+// Schermata del magazziniere: prima la vetreria, poi le cavallette vuote in piazzale da riportare.
+// Le altre cavallette della vetreria (non vuote o dal cliente) si vedono, ma non si possono spuntare.
 export default function Restituzione() {
   const { cavallette, vetrerie, nomeVetreria, ricarica, caricamento, errore: erroreCaricamento } = useDati();
   const [scelta, setScelta] = useState<string | null>(null);
@@ -13,20 +15,24 @@ export default function Restituzione() {
   const [errore, setErrore] = useState<string | null>(null);
   const [esito, setEsito] = useState<string | null>(null);
 
-  const restituibili = useMemo(() => {
-    const codici = new Set(vetrerie.filter((v) => v.restituibile).map((v) => v.codice));
-    return cavallette.filter((c) => c.stato === 'vuota' && c.luogo === 'piazzale' && codici.has(c.vetreria));
-  }, [cavallette, vetrerie]);
+  const fornitori = useMemo(() => vetrerie.filter((v) => v.restituibile), [vetrerie]);
 
-  const perVetreria = useMemo(() => {
-    const m = new Map<string, typeof restituibili>();
-    for (const c of restituibili) m.set(c.vetreria, [...(m.get(c.vetreria) ?? []), c]);
+  // tutte le cavallette (non restituite) delle vetrerie da restituire
+  const dellaVetreria = useMemo(() => {
+    const m = new Map<string, typeof cavallette>();
+    for (const c of cavallette) if (!c.restituita && fornitori.some((v) => v.codice === c.vetreria)) m.set(c.vetreria, [...(m.get(c.vetreria) ?? []), c]);
     return m;
-  }, [restituibili]);
+  }, [cavallette, fornitori]);
+
+  const pronta = (c: (typeof cavallette)[number]): boolean => c.stato === 'vuota' && c.luogo === 'piazzale';
 
   const lista = useMemo(
-    () => (scelta ? [...(perVetreria.get(scelta) ?? [])].sort((a, b) => confrontaNumeri(a.numero, b.numero)) : []),
-    [perVetreria, scelta],
+    () => (scelta ? (dellaVetreria.get(scelta) ?? []).filter(pronta).sort((a, b) => confrontaNumeri(a.numero, b.numero)) : []),
+    [dellaVetreria, scelta],
+  );
+  const altre = useMemo(
+    () => (scelta ? (dellaVetreria.get(scelta) ?? []).filter((c) => !pronta(c)).sort((a, b) => confrontaNumeri(a.numero, b.numero)) : []),
+    [dellaVetreria, scelta],
   );
 
   function alterna(id: string): void {
@@ -68,20 +74,17 @@ export default function Restituzione() {
       {caricamento ? (
         <p className="vuoto">Caricamento…</p>
       ) : !scelta ? (
-        perVetreria.size === 0 ? (
-          <p className="vuoto">Nessuna cavalletta da restituire.</p>
-        ) : (
-          <div className="grande-lista">
-            {vetrerie
-              .filter((v) => perVetreria.has(v.codice))
-              .map((v) => (
-                <button key={v.codice} className="btn btn-big btn-vetreria" onClick={() => { setScelta(v.codice); setSpuntate(new Set()); setEsito(null); }}>
-                  <span>{v.nome}</span>
-                  <span className="stat-n">{perVetreria.get(v.codice)?.length}</span>
-                </button>
-              ))}
-          </div>
-        )
+        <div className="grande-lista">
+          {fornitori.map((v) => {
+            const pronte = (dellaVetreria.get(v.codice) ?? []).filter(pronta).length;
+            return (
+              <button key={v.codice} className="btn btn-big btn-vetreria" onClick={() => { setScelta(v.codice); setSpuntate(new Set()); setEsito(null); }}>
+                <span>{v.nome}</span>
+                <span className="stat-n">{pronte}</span>
+              </button>
+            );
+          })}
+        </div>
       ) : (
         <>
           <div className="riga-spazio">
@@ -92,6 +95,9 @@ export default function Restituzione() {
             <button className="btn" onClick={() => setSpuntate(new Set(lista.map((c) => c.id)))}>Seleziona tutte</button>
             <button className="btn" onClick={() => setSpuntate(new Set())}>Nessuna</button>
           </div>
+          {lista.length === 0 && (
+            <p className="vuoto">Nessuna cavalletta vuota di {nomeVetreria(scelta)} da restituire adesso. Una cavalletta diventa restituibile quando è in piazzale e vuota (dopo il «DDT RIENTRO» di Smartsheet).</p>
+          )}
           <ul className="spunte">
             {lista.map((c) => (
               <li key={c.id}>
@@ -102,6 +108,22 @@ export default function Restituzione() {
               </li>
             ))}
           </ul>
+          {altre.length > 0 && (
+            <>
+              <h3>Non ancora restituibili</h3>
+              <ul className="spunte">
+                {altre.map((c) => (
+                  <li key={c.id}>
+                    <label className="spunta disattiva" title="Non è vuota in piazzale">
+                      <input type="checkbox" disabled />
+                      <span className="numero">{c.numero}</span>
+                      <span className="nota">{etichettaStato(c, false)} · {etichettaLuogo(c)}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           <button className="btn btn-primary btn-big invia" disabled={spuntate.size === 0 || occupato} onClick={() => void invia()}>
             {occupato ? 'Invio…' : `Invia (${spuntate.size})`}
           </button>
