@@ -1,14 +1,15 @@
 import { useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { salvaNuoveCavallette } from '../lib/api.ts';
+import { salvaNuoveCavallette, segnaNonUsate } from '../lib/api.ts';
 import { leggiArriviExcel } from '../lib/arrivi.ts';
 import { parseDdt } from '../lib/ddtParser.ts';
 import { leggiPdf } from '../lib/pdfText.ts';
 import { leggiXlsx } from '../lib/xlsxReader.ts';
-import { chiaveDaCodice, espandiIntervalli } from '../lib/keys.ts';
+import { chiaveDaCodice, confrontaNumeri, espandiIntervalli } from '../lib/keys.ts';
 import { oggiRoma } from '../lib/dates.ts';
 import { LONGATO } from '../lib/types.ts';
 import { useDati } from '../lib/dati.tsx';
+import type { Cavalletta } from '../lib/types.ts';
 import { Messaggio, Titolo } from '../components/ui.tsx';
 
 interface RigaBozza {
@@ -213,6 +214,7 @@ export default function Arrivi() {
         </div>
       )}
 
+      <NonUsate cavallette={cavallette} nomeVetreria={nomeVetreria} ricarica={ricarica} />
       <Interne esistenti={esistenti} nomeVetreria={nomeVetreria} ricarica={ricarica} />
     </>
   );
@@ -267,6 +269,94 @@ function Interne(props: { esistenti: Set<string>; nomeVetreria: (c: string) => s
       </div>
       {calcolo.errore && <p className="errore-testo">{calcolo.errore}</p>}
       {!calcolo.errore && testo.trim() && <p className="nota">{calcolo.nuove.length} nuove{calcolo.gia ? `, ${calcolo.gia} già presenti (saltate)` : ''}.</p>}
+    </div>
+  );
+}
+
+/** Cavallette arrivate con i vetri che non verranno usate in produzione: si segnano vuote e la logistica viene avvisata */
+function NonUsate(props: { cavallette: Cavalletta[]; nomeVetreria: (c: string) => string; ricarica: () => Promise<void> }) {
+  const [cerca, setCerca] = useState('');
+  const [spuntate, setSpuntate] = useState<Set<string>>(new Set());
+  const [occupato, setOccupato] = useState(false);
+  const [errore, setErrore] = useState<string | null>(null);
+  const [esito, setEsito] = useState<string | null>(null);
+
+  const candidate = useMemo(
+    () =>
+      props.cavallette
+        .filter((c) => !c.restituita && c.vetreria !== LONGATO && c.stato === 'piena_vetri' && c.luogo === 'piazzale')
+        .sort((a, b) => confrontaNumeri(a.numero, b.numero)),
+    [props.cavallette],
+  );
+  const visibili = candidate.filter((c) => !cerca.trim() || c.numero.toLowerCase().includes(cerca.trim().toLowerCase()) || (c.contenuto ?? '').toLowerCase().includes(cerca.trim().toLowerCase()));
+
+  function alterna(id: string): void {
+    setSpuntate((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  }
+
+  async function segna(): Promise<void> {
+    const scelte = candidate.filter((c) => spuntate.has(c.id));
+    if (!scelte.length) return;
+    if (!window.confirm(`Segnare ${scelte.length} cavallette come vuote, non usate in produzione? La logistica riceverà una segnalazione.`)) return;
+    setOccupato(true);
+    setErrore(null);
+    setEsito(null);
+    try {
+      const n = await segnaNonUsate(scelte, props.nomeVetreria);
+      setEsito(`${n} cavallette segnate vuote. La logistica le vede in Segnalazioni e il magazziniere può restituirle.`);
+      setSpuntate(new Set());
+      await props.ricarica();
+    } catch (e) {
+      setErrore(e instanceof Error ? e.message : 'Errore');
+      await props.ricarica();
+    } finally {
+      setOccupato(false);
+    }
+  }
+
+  return (
+    <div className="card">
+      <h2>Non usate in produzione</h2>
+      <p className="sotto">Cavallette arrivate con i vetri e scaricate senza essere usate per i serramenti. Spunta quelle da segnare come vuote: diventano restituibili e la logistica riceve una segnalazione.</p>
+      {errore && <Messaggio tipo="errore">{errore}</Messaggio>}
+      {esito && <Messaggio tipo="ok">{esito}</Messaggio>}
+      {candidate.length === 0 ? (
+        <p className="nota">Nessuna cavalletta piena di vetri in piazzale.</p>
+      ) : (
+        <>
+          <div className="toolbar">
+            <input className="cerca" placeholder="Cerca numero o contenuto" value={cerca} onChange={(e) => setCerca(e.target.value)} />
+            <button className="btn" onClick={() => setSpuntate(new Set(visibili.map((c) => c.id)))}>Seleziona le {visibili.length} visibili</button>
+            <button className="btn" onClick={() => setSpuntate(new Set())}>Nessuna</button>
+          </div>
+          <div className="scorri">
+            <table className="tabella">
+              <thead><tr><th /><th>Cavalletta</th><th>Vetreria</th><th>Arrivata il</th><th>Contenuto</th></tr></thead>
+              <tbody>
+                {visibili.map((c) => (
+                  <tr key={c.id} className="cliccabile" onClick={() => alterna(c.id)}>
+                    <td><input type="checkbox" checked={spuntate.has(c.id)} onChange={() => alterna(c.id)} onClick={(e) => e.stopPropagation()} aria-label={`Seleziona ${c.numero}`} /></td>
+                    <td className="numero">{c.numero}</td>
+                    <td>{props.nomeVetreria(c.vetreria)}</td>
+                    <td>{c.data_arrivo ? c.data_arrivo.split('-').reverse().join('/') : ''}</td>
+                    <td>{c.contenuto}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="riga-bottoni">
+            <button className="btn btn-primary" disabled={spuntate.size === 0 || occupato} onClick={() => void segna()}>
+              {occupato ? 'Salvataggio…' : `Segna ${spuntate.size || ''} vuote e avvisa la logistica`}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

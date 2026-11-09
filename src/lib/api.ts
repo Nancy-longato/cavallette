@@ -156,6 +156,39 @@ export async function applicaPiano(piano: Piano): Promise<void> {
   }
 }
 
+/**
+ * Cavallette arrivate con i vetri e non usate in produzione: diventano vuote (pronte da restituire)
+ * e si crea una segnalazione per la logistica. Si chiude da sola alla restituzione.
+ */
+export async function segnaNonUsate(cavallette: Cavalletta[], nomeVetreria: (codice: string) => string): Promise<number> {
+  if (!cavallette.length) return 0;
+  const patch = { stato: 'vuota' as const, contenuto: null };
+  for (let i = 0; i < cavallette.length; i += 10) {
+    await Promise.all(
+      cavallette.slice(i, i + 10).map(async (c) => {
+        okTocca(await supabase.from('cavallette').update(patch).eq('id', c.id).eq('stato', 'piena_vetri').select('id'), `Cavalletta ${c.numero}`);
+      }),
+    );
+  }
+  ok(
+    await supabase.from('eventi').insert(
+      cavallette.map((c) => ({ cavalletta_id: c.id, tipo: 'non_usata', dettaglio: { vetreria: c.vetreria, contenuto_precedente: c.contenuto } })),
+    ),
+  );
+  const aperte = ok(await supabase.from('anomalie').select('tipo, numero, commessa').eq('risolta', false).eq('tipo', 'non_usata')) ?? [];
+  const gia = new Set(aperte.map((a) => a.numero));
+  const nuove = cavallette
+    .filter((c) => !gia.has(c.numero))
+    .map((c) => ({
+      tipo: 'non_usata',
+      numero: c.numero,
+      commessa: '',
+      dettaglio: `La cavalletta ${c.numero} (${nomeVetreria(c.vetreria)}) è arrivata con i vetri ma non è stata usata in produzione: è vuota in piazzale, pronta da riportare alla vetreria.`,
+    }));
+  if (nuove.length) ok(await supabase.from('anomalie').insert(nuove));
+  return cavallette.length;
+}
+
 export async function risolviAnomalia(id: number, risolta: boolean): Promise<void> {
   okTocca(
     await supabase

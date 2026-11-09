@@ -7,6 +7,7 @@ import { Badge, Messaggio, Titolo, dataOra } from '../components/ui.tsx';
 const TITOLI: Record<string, string> = {
   sconosciuta: 'Cavalletta non in anagrafica',
   gia_in_uso: 'Cavalletta già in uso su un\'altra commessa',
+  non_usata: 'Cavalletta non usata in produzione, da restituire',
 };
 
 export default function Segnalazioni() {
@@ -43,7 +44,7 @@ export default function Segnalazioni() {
     <>
       <Titolo
         titolo="Segnalazioni"
-        sotto="Incongruenze trovate leggendo Smartsheet. Si chiudono da sole quando il dato torna coerente; puoi chiuderle anche a mano."
+        sotto="Incongruenze trovate leggendo Smartsheet e cavallette segnalate dall'ufficio come non usate. Si chiudono da sole (dati coerenti, oppure cavalletta restituita); puoi chiuderle anche a mano."
         azioni={
           <label className="check">
             <input type="checkbox" checked={mostraRisolte} onChange={(e) => setMostraRisolte(e.target.checked)} /> Mostra anche le risolte
@@ -61,14 +62,14 @@ export default function Segnalazioni() {
             <li key={a.id} className={`card ${a.risolta ? 'risolta' : ''}`}>
               <div className="riga-spazio">
                 <div>
-                  <Badge tono={a.risolta ? 'verde' : 'giallo'}>{a.risolta ? 'Risolta' : TITOLI[a.tipo] ?? a.tipo}</Badge>
+                  <Badge tono={a.risolta ? 'verde' : a.tipo === 'non_usata' ? 'blu' : 'giallo'}>{a.risolta ? 'Risolta' : TITOLI[a.tipo] ?? a.tipo}</Badge>
                   <strong className="numero"> {a.numero}</strong>
                   {a.commessa && <span className="sotto"> · commessa {a.commessa}</span>}
                 </div>
                 <button className="btn" onClick={() => void cambia(a, !a.risolta)}>{a.risolta ? 'Riapri' : 'Segna come risolta'}</button>
               </div>
               <p>{a.dettaglio}</p>
-              <p className="sotto">Rilevata il {dataOra(a.creata_il)}</p>
+              <p className="sotto">Segnalata il {dataOra(a.creata_il)}</p>
             </li>
           ))}
         </ul>

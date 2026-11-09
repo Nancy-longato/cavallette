@@ -288,6 +288,10 @@ begin
   insert into eventi (cavalletta_id, tipo, dettaglio, utente)
   select x, 'restituita', jsonb_build_object('vetreria', p_vetreria, 'restituzione_id', v_id), auth.uid()
     from unnest(v_ids) as x;
+  -- le segnalazioni "non usata in produzione" si chiudono quando la cavalletta torna alla vetreria
+  update anomalie set risolta = true, risolta_il = now()
+   where tipo = 'non_usata' and not risolta
+     and numero in (select numero from cavallette where id = any (v_ids));
   return v_id;
 end $$;
 

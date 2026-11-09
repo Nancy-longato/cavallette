@@ -13,6 +13,7 @@ const NOMI_EVENTO: Record<string, string> = {
   imballata: 'Imballata (commessa abbinata)',
   consegnata: 'Consegnata al cliente',
   rientrata: 'Rientrata in piazzale, vuota',
+  non_usata: 'Segnata vuota: non usata in produzione',
   restituita: 'Restituita alla vetreria',
   correzione: 'Correzione manuale',
 };
