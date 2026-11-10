@@ -187,6 +187,11 @@ export interface Piano {
 
 const FASE_TIPO = { 1: 'imballata', 2: 'consegnata', 3: 'rientrata' } as const;
 
+/** La riga di Smartsheet riguarda un giro successivo all'arrivo della cavalletta? Senza date non si può sapere. */
+function rientroDopoArrivo(dataCons: string | null, dataArrivo: string | null): boolean {
+  return dataCons !== null && dataArrivo !== null && dataCons >= dataArrivo;
+}
+
 export function pianificaImport(righe: RigaSmartsheet[], stato: StatoImport, opz: OpzioniImport): Piano {
   const cav = new Map<string, Cavalletta>();
   for (const c of stato.cavallette) if (!c.restituita) cav.set(c.numero, { ...c });
@@ -266,7 +271,9 @@ export function pianificaImport(righe: RigaSmartsheet[], stato: StatoImport, opz
           data_consegna: fase === 2 ? (riga.dataCons ?? opz.oggi) : null,
           contenuto: null,
         };
-      } else if (assegnataQui) {
+      } else if (assegnataQui || (!c.commessa && rientroDopoArrivo(riga.dataCons, c.data_arrivo))) {
+        // rientro: la cavalletta torna vuota in piazzale. Se non era abbinata a questa commessa, lo si applica
+        // solo quando la data della consegna è dopo il suo arrivo (altrimenti potrebbe essere un giro vecchio).
         patch = {
           luogo: 'piazzale',
           stato: 'vuota',

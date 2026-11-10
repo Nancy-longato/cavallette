@@ -166,6 +166,26 @@ test('riga storica già chiusa (con rientro) su una cavalletta libera non la toc
   assert.equal(f.cavallette[1].stato, 'vuota');
 });
 
+test('rientro con data dopo l\'arrivo su una cavalletta mai abbinata: torna vuota in piazzale', () => {
+  const righe = [riga({ commessa: '26632', imballo: true, ddtCons: true, ddtRientro: true, cavallette: 'P136', dataCons: '2026-11-04' })];
+  const s = statoIniziale();
+  const p = pianificaImport(righe, s, { oggi: OGGI });
+  assert.equal(p.azioni.length, 1);
+  assert.equal(p.riepilogo.rientrate, 1);
+  const f = applica(s, p);
+  const c = f.cavallette.find((x) => x.numero === 'P136')!;
+  assert.equal(c.stato, 'vuota');
+  assert.equal(c.luogo, 'piazzale');
+  assert.equal(c.commessa, null);
+});
+
+test('rientro con data PRIMA dell\'arrivo (giro vecchio): la cavalletta non si tocca', () => {
+  const righe = [riga({ commessa: 'VECCHIA', imballo: true, ddtCons: true, ddtRientro: true, cavallette: 'P136', dataCons: '2026-05-04' })];
+  const p = pianificaImport(righe, statoIniziale(), { oggi: OGGI });
+  assert.equal(p.azioni.length, 0);
+  assert.equal(p.riepilogo.registrate, 1);
+});
+
 test('filtro "dal": le righe con data uscita precedente vengono ignorate', () => {
   const righe = [
     riga({ commessa: 'VECCHIA', imballo: true, cavallette: '62', dataCons: '2025-06-01' }),
