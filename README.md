@@ -54,11 +54,11 @@ Non mettere mai la chiave `service_role` nell'app.
   Si può anche inserire a mano (pulsante «Inserisci a mano»). La data di arrivo è quella del DDT.
   Regola dei codici: prefisso della vetreria, trattino, codice stampato (E82 su Pescini → `P-E82`). In Smartsheet va bene anche `PE82` o `p e82`. Le nostre (Longato) sono numeri semplici, aggiungibili a intervalli (`1-50`).
 - **Da Smartsheet**: esporta la tabella in Excel e caricala. Si vede un'anteprima, poi si conferma. Si può ripetere tutte le volte che serve: niente doppioni, le correzioni a mano non vengono sovrascritte.
-  - NUMERO CAVALLETTE + IMBALLO → piazzale, piena di serramenti, con commessa/cliente/indirizzo
-  - DDT cons. rientrato → dal cliente
-  - DDT RIENTRO → piazzale, vuota, commessa/cliente/indirizzo cancellati
+  - N° CAVALLETTE + IMBALLAGGIO → piazzale, piena di serramenti, con commessa/cliente/indirizzo
+  - DDT CONS. RIENTRATO → dal cliente
+  - DDT RIENTRO CAVALLETTA → piazzale, vuota, commessa/cliente/indirizzo cancellati
   - Cavalletta non in anagrafica → **Segnalazione**
-  - Colonne lette per nome: COMMESSA, CLIENTE, INDIRIZZO CANTIERE / PAESE / PROVINCIA, IMBALLO, NUMERO CAVALLETTE, DDT cons. rientrato, DDT RIENTRO. Se «DDT cons. rientrato» contiene una data (invece di una spunta), quella è la data di consegna al cliente e da lì partono i 10 giorni lavorativi; se è una semplice spunta, partono dal giorno in cui carichi il file.
+  - Colonne lette per nome: COMMESSA, CLIENTE, INDIRIZZO CANTIERE / PAESE / PROVINCIA, IMBALLAGGIO, N° CAVALLETTE, DDT CONS. RIENTRATO, DATA CONS. RIENTRATO, DDT RIENTRO CAVALLETTA, DAT DDT RIENTRO CAVALLETTA. Le due colonne data sono facoltative: danno la data di consegna al cliente (da cui partono i 10 giorni lavorativi) e la data di rientro; senza date si usa il giorno in cui carichi il file.
   - Al primo import usa il filtro «dal» per saltare lo storico vecchio.
 - **Da ritirare**: dopo 10 giorni *lavorativi* (esclusi sabati, domeniche, festivi italiani e chiusure aziendali) dalla consegna. Soglia e chiusure si cambiano in **Impostazioni**. Il magazziniere non la vede.
 - **Restituzione** (magazziniere): sceglie la vetreria, spunta le cavallette, Invia. Spariscono dal cruscotto e restano nello **Storico** (data + elenco).

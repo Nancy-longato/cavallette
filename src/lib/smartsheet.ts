@@ -3,8 +3,8 @@
 //
 // Regole (ogni coppia cavalletta+commessa ha una "fase" che può solo avanzare):
 //   fase 1  IMBALLO spuntato          -> Piazzale, Piena (serramenti), commessa/cliente/indirizzo
-//   fase 2  DDT cons. rientrato       -> Dal cliente (+ indirizzo)
-//   fase 3  DDT RIENTRO               -> Piazzale, Vuota, commessa/cliente/indirizzo svuotati
+//   fase 2  DDT CONS. RIENTRATO       -> Dal cliente (+ indirizzo), data da DATA CONS. RIENTRATO
+//   fase 3  DDT RIENTRO CAVALLETTA    -> Piazzale, Vuota, commessa/cliente/indirizzo svuotati
 // Rieseguire lo stesso file non cambia nulla; le correzioni manuali non vengono sovrascritte.
 
 import type { Cavalletta, Ciclo } from './types.ts';
@@ -21,7 +21,8 @@ export interface RigaSmartsheet {
   cavallette: string; // testo grezzo della colonna NUMERO CAVALLETTE
   ddtCons: boolean;
   ddtRientro: boolean;
-  dataCons: string | null; // YYYY-MM-DD, solo se la colonna «DDT cons. rientrato» contiene una data
+  dataCons: string | null; // YYYY-MM-DD: colonna «DATA CONS. RIENTRATO» (o data scritta nella colonna della spunta)
+  dataRientro: string | null; // YYYY-MM-DD: colonna «DAT DDT RIENTRO CAVALLETTA»
 }
 
 export interface LetturaSmartsheet {
@@ -50,15 +51,17 @@ const ALIAS = {
   cavallette: ['NUMERO CAVALLETTE', 'N CAVALLETTE', 'CAVALLETTE', 'NUMERO CAVALLETTA'],
   ddtCons: ['DDT CONS RIENTRATO', 'DDT CONSEGNA RIENTRATO'],
   ddtRientro: ['DDT RIENTRO', 'DDT RIENTRO CAVALLETTA', 'DDT RIENTRO CAVALLETTE'],
+  dataCons: ['DATA CONS RIENTRATO', 'DATA CONSEGNA RIENTRATO', 'DATA DDT CONS RIENTRATO'],
+  dataRientro: ['DAT DDT RIENTRO CAVALLETTA', 'DATA DDT RIENTRO CAVALLETTA', 'DATA RIENTRO CAVALLETTA', 'DATA DDT RIENTRO', 'DATA RIENTRO'],
 } as const;
 
 type Campo = keyof typeof ALIAS;
 const OBBLIGATORI: { campo: Campo; nome: string }[] = [
   { campo: 'commessa', nome: 'COMMESSA' },
-  { campo: 'imballo', nome: 'IMBALLO' },
-  { campo: 'cavallette', nome: 'NUMERO CAVALLETTE' },
-  { campo: 'ddtCons', nome: 'DDT cons. rientrato' },
-  { campo: 'ddtRientro', nome: 'DDT RIENTRO' },
+  { campo: 'imballo', nome: 'IMBALLAGGIO' },
+  { campo: 'cavallette', nome: 'N° CAVALLETTE' },
+  { campo: 'ddtCons', nome: 'DDT CONS. RIENTRATO' },
+  { campo: 'ddtRientro', nome: 'DDT RIENTRO CAVALLETTA' },
 ];
 
 export function aBooleano(c: Cella | undefined): boolean {
@@ -129,13 +132,14 @@ export function leggiSmartsheet(fogli: Foglio[]): LetturaSmartsheet {
       indirizzo,
       imballo: aBooleano(val(r, 'imballo')),
       cavallette: cellaInTesto(val(r, 'cavallette')),
-      // «DDT cons. rientrato» può essere una spunta oppure una data: una data vale come spunta
+      // la spunta può anche contenere direttamente una data (vale come spunta)
       ddtCons: aBooleano(val(r, 'ddtCons')) || aDataIso(val(r, 'ddtCons')) !== null,
-      ddtRientro: aBooleano(val(r, 'ddtRientro')),
-      dataCons: aDataIso(val(r, 'ddtCons')),
+      ddtRientro: aBooleano(val(r, 'ddtRientro')) || aDataIso(val(r, 'ddtRientro')) !== null,
+      dataCons: aDataIso(val(r, 'dataCons')) ?? aDataIso(val(r, 'ddtCons')),
+      dataRientro: aDataIso(val(r, 'dataRientro')) ?? aDataIso(val(r, 'ddtRientro')),
     });
   }
-  return { righe, colonneMancanti, haDataCons: righe.some((x) => x.dataCons !== null), foglio: foglio.nome };
+  return { righe, colonneMancanti, haDataCons: righe.some((x) => x.dataCons !== null || x.dataRientro !== null), foglio: foglio.nome };
 }
 
 // ---------------------------------------------------------------------------
@@ -228,7 +232,8 @@ export function pianificaImport(righe: RigaSmartsheet[], stato: StatoImport, opz
     if (fase === 0) continue;
     const chiavi = spezzaCavallette(riga.cavallette);
     if (!chiavi.length) continue;
-    if (opz.dal && riga.dataCons && riga.dataCons < opz.dal) {
+    const dataRiga = riga.dataCons ?? riga.dataRientro;
+    if (opz.dal && dataRiga && dataRiga < opz.dal) {
       piano.riepilogo.escluse++;
       continue;
     }
@@ -271,7 +276,7 @@ export function pianificaImport(righe: RigaSmartsheet[], stato: StatoImport, opz
           data_consegna: fase === 2 ? (riga.dataCons ?? opz.oggi) : null,
           contenuto: null,
         };
-      } else if (assegnataQui || (!c.commessa && rientroDopoArrivo(riga.dataCons, c.data_arrivo))) {
+      } else if (assegnataQui || (!c.commessa && rientroDopoArrivo(riga.dataRientro ?? riga.dataCons, c.data_arrivo))) {
         // rientro: la cavalletta torna vuota in piazzale. Se non era abbinata a questa commessa, lo si applica
         // solo quando la data della consegna è dopo il suo arrivo (altrimenti potrebbe essere un giro vecchio).
         patch = {
@@ -303,8 +308,8 @@ export function pianificaImport(righe: RigaSmartsheet[], stato: StatoImport, opz
         cliente: riga.cliente,
         indirizzo: riga.indirizzo,
         data_uscita: null,
-        data_consegna: fase === 2 ? (riga.dataCons ?? opz.oggi) : (esistente?.data_consegna ?? null),
-        data_rientro: fase === 3 ? opz.oggi : null,
+        data_consegna: esistente?.data_consegna ?? riga.dataCons ?? (fase === 2 ? opz.oggi : null),
+        data_rientro: fase === 3 ? (riga.dataRientro ?? opz.oggi) : null,
       });
       piano.risolte.push({ numero: chiave, commessa: riga.commessa });
     }

@@ -103,11 +103,11 @@ export default function ImportSmartsheet() {
 
           {!lettura.haDataCons && (
             <Messaggio tipo="info">
-              In «DDT cons. rientrato» non ci sono date, solo spunte: i 10 giorni per il ritiro partono dal giorno in cui la spunta viene vista per la prima volta (il giorno in cui carichi il file). Se in Smartsheet metti la data di quel DDT in quella colonna, i giorni saranno precisi.
+              Nelle colonne «DATA CONS. RIENTRATO» e «DAT DDT RIENTRO CAVALLETTA» non ci sono date: i 10 giorni per il ritiro partono dal giorno in cui la spunta viene vista per la prima volta (il giorno in cui carichi il file).
             </Messaggio>
           )}
           {lettura.haDataCons && (
-            <label className="form">Considera solo le commesse con DDT cons. rientrato dal (utile al primo import, per saltare lo storico vecchio)
+            <label className="form">Considera solo le commesse con data di consegna/rientro dal (utile al primo import, per saltare lo storico vecchio)
               <input type="date" value={dal} onChange={(e) => setDal(e.target.value)} />
             </label>
           )}

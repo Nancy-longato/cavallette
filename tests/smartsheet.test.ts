@@ -18,7 +18,7 @@ function cav(id: string, numero: string, extra: Partial<Cavalletta> = {}): Caval
 function riga(extra: Partial<RigaSmartsheet>): RigaSmartsheet {
   return {
     commessa: '26033', cliente: 'MASIERO GIADA', indirizzo: 'Via Verdi 1, SPINEA (VE)', imballo: false,
-    cavallette: '', ddtCons: false, ddtRientro: false, dataCons: null, ...extra,
+    cavallette: '', ddtCons: false, ddtRientro: false, dataCons: null, dataRientro: null, ...extra,
   };
 }
 
@@ -242,4 +242,35 @@ test('«DDT cons. rientrato» con una data: vale come spunta e dà la data di co
   assert.deepEqual(l.colonneMancanti, []);
   assert.equal(l.haDataCons, true);
   assert.deepEqual(l.righe.map((r) => [r.ddtCons, r.dataCons]), [[true, '2026-10-15'], [true, null], [false, null]]);
+});
+
+test('intestazioni vere del foglio Longato: IMBALLAGGIO, N° CAVALLETTE, DATA CONS. RIENTRATO, DAT DDT RIENTRO CAVALLETTA', () => {
+  const l = leggiSmartsheet([
+    {
+      nome: 'Foglio',
+      righe: [
+        ['COMMESSA', 'CLIENTE', 'IMBALLAGGIO', 'N° CAVALLETTE', 'DDT CONS. RIENTRATO', 'DATA CONS. RIENTRATO', 'DDT RIENTRO CAVALLETTA', 'DAT DDT RIENTRO CAVALLETTA'],
+        ['26630', 'Uno', 'true', 'P-A97', null, null, null, null],
+        ['26631', 'Due', 'true', 'P-B20', 'true', '03/11/2026', null, null],
+        ['26632', 'Tre', 'true', 'P-D65', 'true', '03/11/2026', 'true', '05/11/2026'],
+      ],
+    },
+  ]);
+  assert.deepEqual(l.colonneMancanti, []);
+  assert.equal(l.haDataCons, true);
+  assert.deepEqual(
+    l.righe.map((r) => [r.imballo, r.ddtCons, r.dataCons, r.ddtRientro, r.dataRientro]),
+    [[true, false, null, false, null], [true, true, '2026-11-03', false, null], [true, true, '2026-11-03', true, '2026-11-05']],
+  );
+  // le tre righe applicate a tre cavallette arrivate il 02/11 con i vetri
+  const s: StatoImport = { cavallette: ['P-A97', 'P-B20', 'P-D65'].map((n, i) => cav('id' + i, n, { data_arrivo: '2026-11-02' })), cicli: [] };
+  const p = pianificaImport(l.righe, s, { oggi: '2026-11-10' });
+  assert.equal(p.anomalie.length, 0);
+  const f = applica(s, p);
+  const per = (n: string) => f.cavallette.find((c) => c.numero === n)!;
+  assert.deepEqual([per('P-A97').luogo, per('P-A97').stato, per('P-A97').commessa], ['piazzale', 'piena_serramenti', '26630']);
+  assert.deepEqual([per('P-B20').luogo, per('P-B20').data_consegna], ['cliente', '2026-11-03']);
+  assert.deepEqual([per('P-D65').luogo, per('P-D65').stato, per('P-D65').commessa], ['piazzale', 'vuota', null]);
+  assert.equal(p.cicli.find((x) => x.commessa === '26632')!.data_rientro, '2026-11-05');
+  assert.equal(p.cicli.find((x) => x.commessa === '26632')!.data_consegna, '2026-11-03');
 });

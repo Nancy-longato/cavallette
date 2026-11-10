@@ -210,7 +210,7 @@ export default function Arrivi() {
             <button className="btn" onClick={() => setBozza(null)}>Annulla</button>
           </div>
           {!pronto && bozza.righe.length > 0 && <p className="nota">Correggi le righe segnalate per poter salvare.</p>}
-          <p className="nota">Il numero che diventa la cavalletta è «prefisso vetreria + codice» (es. Pescini E82 → P-E82). È quello da scrivere in Smartsheet nella colonna NUMERO CAVALLETTE.</p>
+          <p className="nota">Il numero che diventa la cavalletta è «prefisso vetreria + codice» (es. Pescini E82 → P-E82). È quello da scrivere in Smartsheet nella colonna N° CAVALLETTE.</p>
         </div>
       )}
 
