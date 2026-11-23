@@ -166,3 +166,5 @@ summary { cursor: pointer; }
   .utente .sotto { display: none; }
   .dettagli { grid-template-columns: 1fr; }
 }
+.gruppo { margin-bottom: 1.75rem; }
+.gruppo h2 { margin-bottom: 0.5rem; }

@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { provinciaDa } from '../src/lib/logica.ts';
 import { normalizzaChiave, spezzaCavallette, chiaveDaCodice, trovaNumero, espandiIntervalli, confrontaNumeri } from '../src/lib/keys.ts';
 import { pasqua, festivi, isLavorativo, giorniLavorativiTra, aggiungiGiorniLavorativi, addDays, diffDays, oggiRoma, formattaData } from '../src/lib/dates.ts';
 import { giorniInCantiere, daRitirare, giacenza } from '../src/lib/logica.ts';
@@ -116,4 +117,13 @@ test('giacenza solo per le cavallette dei fornitori', () => {
   assert.equal(giacenza(cav({ vetreria: 'P', data_arrivo: '2026-10-25' }), '2026-11-04'), 10);
   assert.equal(giacenza(cav({ vetreria: 'L', data_arrivo: '2026-10-25' }), '2026-11-04'), null);
   assert.equal(giacenza(cav({ vetreria: 'P', data_arrivo: null }), '2026-11-04'), null);
+});
+
+test('provinciaDa: legge la provincia tra parentesi in fondo all\'indirizzo', () => {
+  assert.equal(provinciaDa('VIA ROMA 22, CASTELFRANCO VENETO (TREVISO)'), 'Treviso');
+  assert.equal(provinciaDa('Via Verdi 1, SPINEA (VE)'), 'VE');
+  assert.equal(provinciaDa('VIA X 3, S. DONA\' DI PIAVE (VENEZIA) '), 'Venezia');
+  assert.equal(provinciaDa('Via Y 1, REGGIO NELL\'EMILIA (REGGIO EMILIA)'), 'Reggio Emilia');
+  assert.equal(provinciaDa('Via senza provincia 5'), 'Provincia non indicata');
+  assert.equal(provinciaDa(null), 'Provincia non indicata');
 });
