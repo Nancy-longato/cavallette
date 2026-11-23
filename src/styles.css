@@ -168,3 +168,19 @@ summary { cursor: pointer; }
 }
 .gruppo { margin-bottom: 1.75rem; }
 .gruppo h2 { margin-bottom: 0.5rem; }
+.cerca-grande { font-size: 1.4rem; padding: 0.8rem 1rem; max-width: 22rem; }
+.gruppo-commessa { margin-bottom: 1rem; }
+.gruppo-commessa h2 { margin: 0; }
+.barra-riepilogo { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.75rem; background: var(--carta); border: 1px solid var(--petrolio); border-top: 3px solid var(--azzurro); border-radius: var(--raggio); padding: 0.85rem 1rem; margin-top: 1rem; box-shadow: 0 -4px 14px rgba(1, 44, 58, 0.12); }
+.solo-stampa { display: none; }
+@media print {
+  .testa, .no-stampa { display: none !important; }
+  .solo-stampa { display: block; color: #000; }
+  .solo-stampa h1 { font-size: 1.6rem; margin: 0 0 0.25rem; }
+  .stampa-commessa { margin-top: 1.25rem; break-inside: avoid; }
+  .stampa-commessa ul { list-style: none; padding: 0; font-size: 1.3rem; line-height: 2; }
+  body { background: #fff; }
+}
+.spunte.larghe { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.spunte.larghe .spunta { flex-wrap: wrap; }
+.spunte.larghe .spunta .badge { margin-left: auto; }
