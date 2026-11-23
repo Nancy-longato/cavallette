@@ -121,9 +121,18 @@ test('giacenza solo per le cavallette dei fornitori', () => {
 
 test('provinciaDa: legge la provincia tra parentesi in fondo all\'indirizzo', () => {
   assert.equal(provinciaDa('VIA ROMA 22, CASTELFRANCO VENETO (TREVISO)'), 'Treviso');
-  assert.equal(provinciaDa('Via Verdi 1, SPINEA (VE)'), 'VE');
+  assert.equal(provinciaDa('Via Verdi 1, SPINEA (VE)'), 'Venezia');
+  assert.equal(provinciaDa('Via Verdi 1, SPINEA (ve)'), 'Venezia');
+  assert.equal(provinciaDa('A, B (TV)'), 'Treviso');
+  assert.equal(provinciaDa('A, B (Forli-Cesena)'), 'Forlì-Cesena');
+  assert.equal(provinciaDa('A, B (FC)'), 'Forlì-Cesena');
+  assert.equal(provinciaDa('A, B (BOLZANO)'), 'Bolzano');
+  assert.equal(provinciaDa('A, B (BZ)'), 'Bolzano');
+  assert.equal(provinciaDa('A, B (PESARO E URBINO)'), 'Pesaro e Urbino');
+  assert.equal(provinciaDa('A, B (XX)'), 'XX');
   assert.equal(provinciaDa('VIA X 3, S. DONA\' DI PIAVE (VENEZIA) '), 'Venezia');
   assert.equal(provinciaDa('Via Y 1, REGGIO NELL\'EMILIA (REGGIO EMILIA)'), 'Reggio Emilia');
+  assert.equal(provinciaDa('Via Z 1, X (RE)'), 'Reggio Emilia');
   assert.equal(provinciaDa('Via senza provincia 5'), 'Provincia non indicata');
   assert.equal(provinciaDa(null), 'Provincia non indicata');
 });

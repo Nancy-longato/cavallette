@@ -31,16 +31,20 @@ export function etichettaLuogo(c: Cavalletta): string {
   return c.luogo === 'cliente' ? 'Dal cliente' : 'Piazzale';
 }
 
+import { nomeProvincia } from './province.ts';
+
 export const SENZA_PROVINCIA = 'Provincia non indicata';
 
 /**
  * Provincia dall'indirizzo, scritta tra parentesi in fondo: "VIA ROMA 22, CASTELFRANCO VENETO (TREVISO)" -> "Treviso".
- * Le sigle di due lettere restano maiuscole ("(VE)" -> "VE").
+ * Sigle e nomi si uniscono: "(VE)", "(Ve)" e "(VENEZIA)" -> "Venezia".
  */
 export function provinciaDa(indirizzo: string | null | undefined): string {
   const m = /\(([^()]+)\)\s*$/.exec(indirizzo ?? '');
   const t = m ? m[1].trim().replace(/\s+/g, ' ') : '';
   if (!t) return SENZA_PROVINCIA;
+  const nome = nomeProvincia(t);
+  if (nome) return nome;
   if (t.length <= 2) return t.toUpperCase();
   return t.toLowerCase().replace(/(^|[\s'-])\p{L}/gu, (x) => x.toUpperCase());
 }
