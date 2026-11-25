@@ -186,3 +186,21 @@ summary { cursor: pointer; }
 .spunte.larghe .spunta .badge { margin-left: auto; }
 
 .riga-scelta { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.25rem; border-bottom: 1px solid var(--bordo); cursor: pointer; }
+
+/* Imballo */
+.imballo { max-width: 460px; margin: 1.5rem auto; }
+.imballo h1 { margin: 0 0 1rem; }
+.imballo-card { display: flex; flex-direction: column; gap: 1.1rem; background: var(--carta); border: 1px solid var(--bordo); border-radius: 14px; padding: 1.5rem; box-shadow: 0 2px 12px rgba(1, 62, 81, 0.07); }
+.imballo-card label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.85rem; font-weight: 600; color: var(--petrolio); }
+.imballo-card input { font-weight: 400; color: var(--testo); }
+.imballo-riga { display: flex; gap: 0.75rem; align-items: flex-end; }
+.imballo-grande { flex: 1; }
+.imballo-grande input { font-size: 1.35rem; padding: 0.6rem 0.75rem; }
+.imballo-data input { padding: 0.6rem 0.5rem; }
+.imballo-chip { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: -0.5rem; }
+.chip { padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
+.chip-ok { background: #e1f1e6; color: #1d6b37; }
+.chip-no { background: #fbe4e1; color: #a33025; }
+.imballo-card .btn-big { width: 100%; margin-top: 0.25rem; }
+@media (max-width: 520px) { .imballo-riga { flex-direction: column; align-items: stretch; } }
+.imballo-card .nota { margin: 0; font-weight: 400; }
