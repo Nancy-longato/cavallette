@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Cavalletta } from '../lib/types.ts';
 import { LONGATO } from '../lib/types.ts';
-import { daRitirare } from '../lib/logica.ts';
 import { useDati } from '../lib/dati.tsx';
 import { Link } from '../lib/router.tsx';
 import CavallettaTable from '../components/CavallettaTable.tsx';
@@ -9,17 +8,15 @@ import CavallettaDialog from '../components/CavallettaDialog.tsx';
 import { Messaggio, Titolo } from '../components/ui.tsx';
 
 type Gruppo = 'tutte' | 'fornitori' | 'interne';
-type Filtro = 'tutti' | 'vetri' | 'serramenti_piazzale' | 'cliente' | 'vuote' | 'da_ritirare';
+type Filtro = 'tutti' | 'vetri' | 'serramenti_piazzale' | 'cliente' | 'vuote';
 
 export default function Dashboard() {
-  const { cavallette, vetrerie, oggi, chiusure, soglia, nomeVetreria, caricamento, errore, anomalieAperte, ricarica } = useDati();
+  const { cavallette, vetrerie, oggi, nomeVetreria, caricamento, errore, anomalieAperte, ricarica } = useDati();
   const [gruppo, setGruppo] = useState<Gruppo>('tutte');
   const [filtro, setFiltro] = useState<Filtro>('tutti');
   const [vetreria, setVetreria] = useState('');
   const [cerca, setCerca] = useState('');
   const [aperta, setAperta] = useState<Cavalletta | null>(null);
-
-  const allerta = (c: Cavalletta): boolean => daRitirare(c, oggi, chiusure, soglia);
 
   const base = useMemo(
     () => cavallette.filter((c) => gruppo === 'tutte' || (gruppo === 'interne') === (c.vetreria === LONGATO)),
@@ -33,7 +30,6 @@ export default function Dashboard() {
       case 'serramenti_piazzale': return c.stato === 'piena_serramenti' && c.luogo === 'piazzale';
       case 'cliente': return c.luogo === 'cliente';
       case 'vuote': return c.stato === 'vuota' && c.luogo === 'piazzale';
-      case 'da_ritirare': return allerta(c);
     }
   };
 
@@ -48,7 +44,7 @@ export default function Dashboard() {
       return [c.numero, c.commessa, c.cliente, c.indirizzo, c.contenuto].some((v) => (v ?? '').toLowerCase().includes(q));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [base, filtro, vetreria, cerca, oggi, chiusure, soglia]);
+  }, [base, filtro, vetreria, cerca]);
 
   const schede: { f: Filtro; titolo: string; classe?: string }[] = [
     { f: 'tutti', titolo: 'In sede / in giro' },
@@ -56,7 +52,6 @@ export default function Dashboard() {
     { f: 'serramenti_piazzale', titolo: 'Serramenti in piazzale' },
     { f: 'cliente', titolo: 'Dal cliente' },
     { f: 'vuote', titolo: 'Vuote in piazzale' },
-    { f: 'da_ritirare', titolo: 'Da ritirare', classe: 'allerta' },
   ];
 
   return (
@@ -108,7 +103,7 @@ export default function Dashboard() {
       {caricamento ? (
         <p className="vuoto">Caricamento…</p>
       ) : (
-        <CavallettaTable righe={visibili} oggi={oggi} chiusure={chiusure} soglia={soglia} nomeVetreria={nomeVetreria} onSeleziona={setAperta} />
+        <CavallettaTable righe={visibili} oggi={oggi} nomeVetreria={nomeVetreria} onSeleziona={setAperta} />
       )}
 
       {aperta && (

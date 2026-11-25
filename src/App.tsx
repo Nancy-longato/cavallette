@@ -1,14 +1,12 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { AuthProvider, useAuth } from './lib/auth.tsx';
 import { DatiProvider, useDati } from './lib/dati.tsx';
 import { Link, useRotta, vai } from './lib/router.tsx';
 import { configurato } from './lib/supabase.ts';
-import { daRitirare } from './lib/logica.ts';
 import type { Ruolo } from './lib/types.ts';
 import Login from './pages/Login.tsx';
 import Dashboard from './pages/Dashboard.tsx';
-import DaRitirare from './pages/DaRitirare.tsx';
 import Imballo from './pages/Imballo.tsx';
 import Segnalazioni from './pages/Segnalazioni.tsx';
 import Arrivi from './pages/Arrivi.tsx';
@@ -29,7 +27,6 @@ interface Rotta {
 const STAFF: Ruolo[] = ['admin', 'ufficio', 'logistica', 'amministrazione'];
 const ROTTE: Rotta[] = [
   { path: '/', titolo: 'Cruscotto', ruoli: STAFF, el: () => <Dashboard /> },
-  { path: '/da-ritirare', titolo: 'Da ritirare', ruoli: STAFF, el: () => <DaRitirare /> },
   { path: '/imballo', titolo: 'Imballo', ruoli: ['admin', 'ufficio'], el: () => <Imballo /> },
   { path: '/segnalazioni', titolo: 'Segnalazioni', ruoli: STAFF, el: () => <Segnalazioni /> },
   { path: '/arrivi', titolo: 'Arrivo vetri', ruoli: ['admin', 'ufficio'], el: () => <Arrivi /> },
@@ -42,16 +39,11 @@ const ROTTE: Rotta[] = [
 
 function Guscio() {
   const { profilo, esci } = useAuth();
-  const { cavallette, oggi, chiusure, soglia, anomalieAperte } = useDati();
+  const { anomalieAperte } = useDati();
   const rotta = useRotta();
   const ruolo = profilo?.ruolo ?? 'nessuno';
   const permesse = ROTTE.filter((r) => r.ruoli.includes(ruolo));
   const corrente = permesse.find((r) => r.path === rotta);
-
-  const nDaRitirare = useMemo(
-    () => (ruolo === 'magazziniere' ? 0 : cavallette.filter((c) => daRitirare(c, oggi, chiusure, soglia)).length),
-    [cavallette, oggi, chiusure, soglia, ruolo],
-  );
 
   useEffect(() => {
     if (!corrente && permesse.length) vai(permesse[0].path);
@@ -69,7 +61,7 @@ function Guscio() {
     );
   }
 
-  const conta = (path: string): number => (path === '/da-ritirare' ? nDaRitirare : path === '/segnalazioni' ? anomalieAperte : 0);
+  const conta = (path: string): number => (path === '/segnalazioni' ? anomalieAperte : 0);
 
   return (
     <div className="guscio">
