@@ -211,6 +211,45 @@ export async function correggiCavalletta(prima: Cavalletta, patch: Partial<Caval
   ok(await supabase.from('eventi').insert({ cavalletta_id: prima.id, tipo: 'correzione', dettaglio: { cambi } }));
 }
 
+export interface Imballo {
+  data: string;
+  commessa: string;
+  cliente: string | null;
+  contenuto: string | null;
+  cavallette: Cavalletta[];
+}
+
+/** Imballo: le cavallette diventano piene di serramenti per la commessa (in piazzale, pronte da consegnare) */
+export async function registraImballo(i: Imballo): Promise<void> {
+  const patch = {
+    stato: 'piena_serramenti' as const,
+    luogo: 'piazzale' as const,
+    commessa: i.commessa,
+    cliente: i.cliente,
+    contenuto: i.contenuto,
+    data_uscita: i.data,
+    data_consegna: null,
+  };
+  for (const c of i.cavallette) {
+    okTocca(await supabase.from('cavallette').update(patch).eq('id', c.id).eq('restituita', false).select('id'), `Cavalletta ${c.numero}`);
+  }
+  ok(
+    await supabase.from('eventi').insert(
+      i.cavallette.map((c) => ({
+        cavalletta_id: c.id,
+        tipo: 'imballata',
+        dettaglio: { commessa: i.commessa, cliente: i.cliente, contenuto: i.contenuto, data: i.data, fonte: 'imballo' },
+      })),
+    ),
+  );
+  ok(
+    await supabase.from('cicli').upsert(
+      i.cavallette.map((c) => ({ cavalletta_id: c.id, commessa: i.commessa, fase: 1, cliente: i.cliente, indirizzo: null, data_uscita: i.data, data_consegna: null, data_rientro: null })),
+      { onConflict: 'cavalletta_id,commessa' },
+    ),
+  );
+}
+
 export async function eliminaCavalletta(id: string): Promise<void> {
   okTocca(await supabase.from('cavallette').delete().eq('id', id).select('id'), 'Eliminazione');
 }

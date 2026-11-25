@@ -184,3 +184,5 @@ summary { cursor: pointer; }
 .spunte.larghe { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
 .spunte.larghe .spunta { flex-wrap: wrap; }
 .spunte.larghe .spunta .badge { margin-left: auto; }
+
+.riga-scelta { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.25rem; border-bottom: 1px solid var(--bordo); cursor: pointer; }

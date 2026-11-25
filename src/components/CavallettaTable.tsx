@@ -2,11 +2,11 @@ import { useMemo, useState } from 'react';
 import type { Cavalletta } from '../lib/types.ts';
 import { confrontaNumeri } from '../lib/keys.ts';
 import { formattaData } from '../lib/dates.ts';
-import { daRitirare, etichettaLuogo, etichettaStato, giacenza, giorniInCantiere } from '../lib/logica.ts';
+import { daRitirare, etichettaStato, giacenza, giorniInCantiere } from '../lib/logica.ts';
 import { Badge } from './ui.tsx';
 import type { Tono } from './ui.tsx';
 
-type Chiave = 'numero' | 'vetreria' | 'luogo' | 'stato' | 'commessa' | 'cliente' | 'arrivo' | 'giacenza' | 'cantiere';
+type Chiave = 'numero' | 'vetreria' | 'stato' | 'commessa' | 'cliente' | 'arrivo' | 'giacenza' | 'cantiere';
 
 interface Props {
   righe: Cavalletta[];
@@ -33,7 +33,6 @@ export default function CavallettaTable(props: Props) {
       switch (k) {
         case 'numero': return c.numero;
         case 'vetreria': return nomeVetreria(c.vetreria);
-        case 'luogo': return c.luogo;
         case 'stato': return c.stato;
         case 'commessa': return c.commessa ?? '';
         case 'cliente': return c.cliente ?? '';
@@ -68,7 +67,6 @@ export default function CavallettaTable(props: Props) {
           <tr>
             <Th k="numero">N.</Th>
             <Th k="vetreria">Vetreria</Th>
-            <Th k="luogo">Luogo</Th>
             <Th k="stato">Stato</Th>
             <Th k="commessa">Commessa</Th>
             <Th k="cliente">Cliente</Th>
@@ -87,7 +85,6 @@ export default function CavallettaTable(props: Props) {
               <tr key={c.id} onClick={() => onSeleziona(c)} className="cliccabile">
                 <td className="numero">{c.numero}</td>
                 <td>{nomeVetreria(c.vetreria)}</td>
-                <td>{etichettaLuogo(c)}</td>
                 <td>
                   <Badge tono={tonoStato(c, allerta)}>{etichettaStato(c, allerta)}</Badge>
                 </td>
