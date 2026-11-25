@@ -42,12 +42,6 @@ export default function Imballo() {
     if (!clienteManuale) setCliente(trovato ?? '');
   }, [trovato, clienteManuale]);
 
-  // cavallette imballabili: in piazzale e non già piene di serramenti
-  const libere = useMemo(
-    () => new Map(cavallette.filter((c) => !c.restituita && c.luogo === 'piazzale' && c.stato !== 'piena_serramenti').map((c) => [c.numero, c])),
-    [cavallette],
-  );
-
   const tutte = useMemo(() => new Map(cavallette.filter((c) => !c.restituita).map((c) => [c.numero, c])), [cavallette]);
 
   const lette = useMemo(() => {
@@ -58,14 +52,15 @@ export default function Imballo() {
       const n = trovaNumero(scritto, tutte.keys());
       const c = n ? tutte.get(n) : undefined;
       if (!c) no.push(scritto);
-      else if (libere.has(c.numero)) {
+      else if (c.stato !== 'piena_serramenti' || (c.commessa !== null && chiaveCommessa(c.commessa) === chiaveCommessa(commessa))) {
+        // il luogo non conta: l'unico problema è sovrascrivere un'altra commessa non ancora liberata
         if (!ok.includes(c)) ok.push(c);
       } else {
-        occupate.push({ c, perche: c.luogo === 'cliente' ? 'è dal cliente' : `è già piena${c.commessa ? ` (commessa ${c.commessa})` : ''}` });
+        occupate.push({ c, perche: `è ancora piena della commessa ${c.commessa ?? '?'}` });
       }
     }
     return { ok, occupate, no };
-  }, [testoCav, tutte, libere]);
+  }, [testoCav, tutte, commessa]);
 
   const puoSalvare = commessa.trim() !== '' && lette.ok.length > 0 && lette.occupate.length === 0 && lette.no.length === 0 && data !== '' && !lavoro;
 
