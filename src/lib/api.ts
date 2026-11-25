@@ -43,6 +43,10 @@ export async function caricaCicli(): Promise<Ciclo[]> {
   return leggiTutto<Ciclo>((da, a) => supabase.from('cicli').select('*').order('creato_il').range(da, a));
 }
 
+export async function caricaCommesse(): Promise<{ commessa: string; cliente: string | null; indirizzo: string | null }[]> {
+  return leggiTutto((da, a) => supabase.from('commesse').select('commessa, cliente, indirizzo').range(da, a));
+}
+
 export async function caricaImpostazioni(): Promise<{ soglia: number; chiusure: string[] }> {
   const imp = ok(await supabase.from('impostazioni').select('chiave, valore')) ?? [];
   const soglia = Number(imp.find((i) => i.chiave === 'giorni_alert')?.valore ?? '10');
@@ -111,6 +115,10 @@ export async function salvaNuoveCavallette(nuove: NuovaCavalletta[], tipoEvento:
 
 /** Applica il piano dell'import Smartsheet. Rieseguibile: i passaggi sono tutti "idempotenti". */
 export async function applicaPiano(piano: Piano): Promise<void> {
+  // 0) commesse (commessa + cliente + indirizzo) per precompilare l'Imballo
+  for (let i = 0; i < piano.commesse.length; i += 500) {
+    ok(await supabase.from('commesse').upsert(piano.commesse.slice(i, i + 500), { onConflict: 'commessa' }).select('commessa'));
+  }
   // 1) cavallette: una sola scrittura per cavalletta (patch unite nell'ordine)
   const patchPerId = new Map<string, Partial<Cavalletta>>();
   for (const a of piano.azioni) patchPerId.set(a.cavallettaId, { ...(patchPerId.get(a.cavallettaId) ?? {}), ...a.patch });

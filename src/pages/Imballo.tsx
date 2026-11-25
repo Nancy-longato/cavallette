@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDati } from '../lib/dati.tsx';
-import { caricaCicli, registraImballo } from '../lib/api.ts';
+import { caricaCicli, caricaCommesse, registraImballo } from '../lib/api.ts';
 import { confrontaNumeri } from '../lib/keys.ts';
 import { formattaData } from '../lib/dates.ts';
 import { Badge, Messaggio, Titolo } from '../components/ui.tsx';
@@ -30,8 +30,9 @@ export default function Imballo() {
     const m = new Map<string, string>();
     for (const c of cavallette) if (c.commessa && c.cliente) m.set(chiaveCommessa(c.commessa), c.cliente);
     setClientiSmartsheet(new Map(m));
-    caricaCicli()
-      .then((cicli) => {
+    Promise.all([caricaCommesse(), caricaCicli()])
+      .then(([commesse, cicli]) => {
+        for (const c of commesse) if (c.cliente) m.set(chiaveCommessa(c.commessa), c.cliente);
         for (const c of cicli) if (c.cliente && !m.has(chiaveCommessa(c.commessa))) m.set(chiaveCommessa(c.commessa), c.cliente);
         setClientiSmartsheet(new Map(m));
       })

@@ -29,6 +29,8 @@ export interface LetturaSmartsheet {
   righe: RigaSmartsheet[];
   colonneMancanti: string[];
   haDataCons: boolean;
+  /** nel foglio ci sono le colonne dei movimenti (imballaggio, cavallette, DDT)? Se no, si salvano solo le commesse */
+  haMovimenti: boolean;
   foglio: string;
 }
 
@@ -58,10 +60,6 @@ const ALIAS = {
 type Campo = keyof typeof ALIAS;
 const OBBLIGATORI: { campo: Campo; nome: string }[] = [
   { campo: 'commessa', nome: 'COMMESSA' },
-  { campo: 'imballo', nome: 'IMBALLAGGIO' },
-  { campo: 'cavallette', nome: 'N° CAVALLETTE' },
-  { campo: 'ddtCons', nome: 'DDT CONS. RIENTRATO' },
-  { campo: 'ddtRientro', nome: 'DDT RIENTRO CAVALLETTA' },
 ];
 
 export function aBooleano(c: Cella | undefined): boolean {
@@ -100,6 +98,7 @@ export function leggiSmartsheet(fogli: Foglio[]): LetturaSmartsheet {
       righe: [],
       colonneMancanti: OBBLIGATORI.map((o) => o.nome),
       haDataCons: false,
+      haMovimenti: false,
       foglio: fogli[0]?.nome ?? '',
     };
   }
@@ -139,7 +138,8 @@ export function leggiSmartsheet(fogli: Foglio[]): LetturaSmartsheet {
       dataRientro: aDataIso(val(r, 'dataRientro')) ?? aDataIso(val(r, 'ddtRientro')),
     });
   }
-  return { righe, colonneMancanti, haDataCons: righe.some((x) => x.dataCons !== null || x.dataRientro !== null), foglio: foglio.nome };
+  const haMovimenti = col.cavallette >= 0 && (col.imballo >= 0 || col.ddtCons >= 0 || col.ddtRientro >= 0);
+  return { righe, colonneMancanti, haDataCons: righe.some((x) => x.dataCons !== null || x.dataRientro !== null), haMovimenti, foglio: foglio.nome };
 }
 
 // ---------------------------------------------------------------------------
@@ -171,7 +171,15 @@ export interface AnomaliaNuova {
   dettaglio: string;
 }
 
+export interface CommessaNota {
+  commessa: string;
+  cliente: string | null;
+  indirizzo: string | null;
+}
+
 export interface Piano {
+  /** commesse lette dal foglio (anche senza cavallette): servono a precompilare il cliente nell'Imballo */
+  commesse: CommessaNota[];
   azioni: Azione[];
   cicli: Ciclo[];
   anomalie: AnomaliaNuova[];
@@ -211,7 +219,13 @@ export function pianificaImport(righe: RigaSmartsheet[], stato: StatoImport, opz
   };
   for (const c of stato.cicli) registra({ ...c });
 
+  const commesseViste = new Map<string, CommessaNota>();
+  for (const r of righe) {
+    const prima = commesseViste.get(r.commessa);
+    commesseViste.set(r.commessa, { commessa: r.commessa, cliente: r.cliente ?? prima?.cliente ?? null, indirizzo: r.indirizzo ?? prima?.indirizzo ?? null });
+  }
   const piano: Piano = {
+    commesse: [...commesseViste.values()],
     azioni: [],
     cicli: [],
     anomalie: [],

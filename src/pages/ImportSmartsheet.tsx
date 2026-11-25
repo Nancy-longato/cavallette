@@ -54,7 +54,7 @@ export default function ImportSmartsheet() {
     return { ...p, anomalie, riepilogo: { ...p.riepilogo, anomalie: anomalie.length } };
   }, [lettura, stato, dal, aperte]);
 
-  const daFare = piano !== null && (piano.azioni.length > 0 || piano.cicli.length > 0 || piano.anomalie.length > 0 || piano.risolte.length > 0);
+  const daFare = piano !== null && (piano.commesse.length > 0 || piano.azioni.length > 0 || piano.cicli.length > 0 || piano.anomalie.length > 0 || piano.risolte.length > 0);
 
   async function applica(): Promise<void> {
     if (!piano) return;
@@ -63,7 +63,7 @@ export default function ImportSmartsheet() {
     try {
       await applicaPiano(piano);
       setEsito(
-        `Fatto: ${piano.azioni.length} aggiornamenti alle cavallette` +
+        `Fatto: ${piano.commesse.length} commesse salvate, ${piano.azioni.length} aggiornamenti alle cavallette` +
           (piano.anomalie.length ? `, ${piano.anomalie.length} nuove segnalazioni` : '') +
           '.',
       );
@@ -101,7 +101,12 @@ export default function ImportSmartsheet() {
           <h2>Anteprima</h2>
           <p className="sotto">Foglio «{lettura.foglio}» · {lettura.righe.length} commesse lette · {piano.riepilogo.righeConCavallette} con cavallette da considerare</p>
 
-          {!lettura.haDataCons && (
+          {!lettura.haMovimenti && (
+            <Messaggio tipo="info">
+              Nel foglio non ci sono le colonne di imballaggio, cavallette e DDT: vengono salvati solo commessa, cliente e indirizzo ({piano.commesse.length} commesse). Il cliente si compilerà da solo nella schermata Imballo.
+            </Messaggio>
+          )}
+          {lettura.haMovimenti && !lettura.haDataCons && (
             <Messaggio tipo="info">
               Nelle colonne «DATA CONS. RIENTRATO» e «DAT DDT RIENTRO CAVALLETTA» non ci sono date: i 10 giorni per il ritiro partono dal giorno in cui la spunta viene vista per la prima volta (il giorno in cui carichi il file).
             </Messaggio>

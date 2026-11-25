@@ -298,6 +298,22 @@ end $$;
 revoke all on function public.restituisci_cavallette(text, uuid[]) from public, anon;
 grant execute on function public.restituisci_cavallette(text, uuid[]) to authenticated;
 
+-- ---------- COMMESSE (da Smartsheet: serve a precompilare il cliente nell'Imballo) ----------
+create table if not exists public.commesse (
+  commessa   text primary key,
+  cliente    text,
+  indirizzo  text,
+  aggiornata_il timestamptz not null default now()
+);
+alter table public.commesse enable row level security;
+drop policy if exists commesse_select on public.commesse;
+create policy commesse_select on public.commesse for select to authenticated
+  using (public.ruolo_corrente() in ('admin', 'ufficio', 'logistica', 'amministrazione'));
+drop policy if exists commesse_write on public.commesse;
+create policy commesse_write on public.commesse for all to authenticated
+  using (public.ruolo_corrente() in ('admin', 'ufficio'))
+  with check (public.ruolo_corrente() in ('admin', 'ufficio'));
+
 -- ---------- PRIMO ADMIN ----------------------------------------------
 -- Dopo aver creato il tuo utente in Authentication > Users, esegui (con la tua email):
 --   update public.profili set ruolo = 'admin' where email = 'tua@email.it';
