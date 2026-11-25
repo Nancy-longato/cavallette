@@ -48,20 +48,26 @@ export default function Imballo() {
     [cavallette],
   );
 
-  const lette = useMemo(() => {
-    const ok: Cavalletta[] = [];
-    const no: string[] = [];
-    for (const scritto of spezzaCavallette(testoCav)) {
-      const n = trovaNumero(scritto, libere.keys());
-      const c = n ? libere.get(n) : undefined;
-      if (c) {
-        if (!ok.includes(c)) ok.push(c);
-      } else no.push(scritto);
-    }
-    return { ok, no };
-  }, [testoCav, libere]);
+  const tutte = useMemo(() => new Map(cavallette.filter((c) => !c.restituita).map((c) => [c.numero, c])), [cavallette]);
 
-  const puoSalvare = commessa.trim() !== '' && lette.ok.length > 0 && lette.no.length === 0 && data !== '' && !lavoro;
+  const lette = useMemo(() => {
+    const ok: Cavalletta[] = []; // presenti a sistema e libere
+    const occupate: { c: Cavalletta; perche: string }[] = []; // presenti ma non imballabili
+    const no: string[] = []; // non presenti a sistema
+    for (const scritto of spezzaCavallette(testoCav)) {
+      const n = trovaNumero(scritto, tutte.keys());
+      const c = n ? tutte.get(n) : undefined;
+      if (!c) no.push(scritto);
+      else if (libere.has(c.numero)) {
+        if (!ok.includes(c)) ok.push(c);
+      } else {
+        occupate.push({ c, perche: c.luogo === 'cliente' ? 'è dal cliente' : `è già piena${c.commessa ? ` (commessa ${c.commessa})` : ''}` });
+      }
+    }
+    return { ok, occupate, no };
+  }, [testoCav, tutte, libere]);
+
+  const puoSalvare = commessa.trim() !== '' && lette.ok.length > 0 && lette.occupate.length === 0 && lette.no.length === 0 && data !== '' && !lavoro;
 
   async function salva(): Promise<void> {
     setLavoro(true);
@@ -122,13 +128,16 @@ export default function Imballo() {
           Cavalletta
           <input value={testoCav} onChange={(e) => setTestoCav(e.target.value)} placeholder="62, P-E82, 63" />
         </label>
-        {(lette.ok.length > 0 || lette.no.length > 0) && (
+        {(lette.ok.length > 0 || lette.occupate.length > 0 || lette.no.length > 0) && (
           <div className="imballo-chip">
             {lette.ok.map((c) => (
               <span key={c.id} className="chip chip-ok">{c.numero}</span>
             ))}
+            {lette.occupate.map(({ c, perche }) => (
+              <span key={c.id} className="chip chip-occ" title={`Presente a sistema, ma ${perche}`}>{c.numero} · {perche}</span>
+            ))}
             {lette.no.map((n) => (
-              <span key={n} className="chip chip-no" title="Non è una cavalletta libera in piazzale">{n} ✕</span>
+              <span key={n} className="chip chip-no" title="Non trovata a sistema">{n} · non trovata</span>
             ))}
           </div>
         )}

@@ -204,3 +204,4 @@ summary { cursor: pointer; }
 .imballo-card .btn-big { width: 100%; margin-top: 0.25rem; }
 @media (max-width: 520px) { .imballo-riga { flex-direction: column; align-items: stretch; } }
 .imballo-card .nota { margin: 0; font-weight: 400; }
+.chip-occ { background: #fdf0d5; color: #8a5a00; }
