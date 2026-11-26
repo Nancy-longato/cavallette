@@ -22,6 +22,7 @@ export function descriviEvento(e: Pick<Evento, 'tipo' | 'dettaglio'>): string {
   const parti: string[] = [];
   if (d.commessa) parti.push(`commessa ${String(d.commessa)}`);
   if (d.cliente) parti.push(String(d.cliente));
+  if (d.indirizzo) parti.push(String(d.indirizzo));
   if (d.ddt) parti.push(`DDT ${String(d.ddt)}`);
   if (d.contenuto) parti.push(String(d.contenuto));
   return parti.join(' · ');

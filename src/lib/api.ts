@@ -243,6 +243,7 @@ export interface Imballo {
   data: string;
   commessa: string;
   cliente: string | null;
+  indirizzo: string | null;
   contenuto: string | null;
   cavallette: Cavalletta[];
 }
@@ -254,6 +255,7 @@ export async function registraImballo(i: Imballo): Promise<void> {
     luogo: 'piazzale' as const,
     commessa: i.commessa,
     cliente: i.cliente,
+    indirizzo: i.indirizzo,
     contenuto: i.contenuto,
     data_uscita: i.data,
     data_consegna: null,
@@ -267,13 +269,13 @@ export async function registraImballo(i: Imballo): Promise<void> {
       i.cavallette.map((c) => ({
         cavalletta_id: c.id,
         tipo: 'imballata',
-        dettaglio: { commessa: i.commessa, cliente: i.cliente, contenuto: i.contenuto, data: i.data, fonte: 'imballo' },
+        dettaglio: { commessa: i.commessa, cliente: i.cliente, indirizzo: i.indirizzo, contenuto: i.contenuto, data: i.data, fonte: 'imballo' },
       })),
     ),
   );
   ok(
     await supabase.from('cicli').upsert(
-      i.cavallette.map((c) => ({ cavalletta_id: c.id, commessa: i.commessa, fase: 1, cliente: i.cliente, indirizzo: null, data_uscita: i.data, data_consegna: null, data_rientro: null })),
+      i.cavallette.map((c) => ({ cavalletta_id: c.id, commessa: i.commessa, fase: 1, cliente: i.cliente, indirizzo: i.indirizzo, data_uscita: i.data, data_consegna: null, data_rientro: null })),
       { onConflict: 'cavalletta_id,commessa' },
     ),
   );

@@ -16,31 +16,44 @@ export default function Imballo() {
   const [commessa, setCommessa] = useState('');
   const [cliente, setCliente] = useState('');
   const [clienteManuale, setClienteManuale] = useState(false);
+  const [indirizzo, setIndirizzo] = useState('');
+  const [indirizzoManuale, setIndirizzoManuale] = useState(false);
   const [contenuto, setContenuto] = useState('');
   const [testoCav, setTestoCav] = useState('');
-  const [clienti, setClienti] = useState<Map<string, string>>(new Map());
+  const [clienti, setClienti] = useState<Map<string, { cliente: string | null; indirizzo: string | null }>>(new Map());
   const [lavoro, setLavoro] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
   const [esito, setEsito] = useState<string | null>(null);
 
   // clienti già noti (da Smartsheet): servono solo a precompilare, se non ci sono si scrive a mano o si lascia vuoto
   useEffect(() => {
-    const m = new Map<string, string>();
-    for (const c of cavallette) if (c.commessa && c.cliente) m.set(chiaveCommessa(c.commessa), c.cliente);
+    const m = new Map<string, { cliente: string | null; indirizzo: string | null }>();
+    const aggiungi = (commessa: string, cliente: string | null, indirizzo: string | null): void => {
+      if (!cliente && !indirizzo) return;
+      const k = chiaveCommessa(commessa);
+      const prima = m.get(k);
+      m.set(k, { cliente: cliente ?? prima?.cliente ?? null, indirizzo: indirizzo ?? prima?.indirizzo ?? null });
+    };
+    for (const c of cavallette) if (c.commessa) aggiungi(c.commessa, c.cliente, c.indirizzo);
     setClienti(new Map(m));
     Promise.all([caricaCommesse(), caricaCicli()])
       .then(([commesse, cicli]) => {
-        for (const c of commesse) if (c.cliente) m.set(chiaveCommessa(c.commessa), c.cliente);
-        for (const c of cicli) if (c.cliente && !m.has(chiaveCommessa(c.commessa))) m.set(chiaveCommessa(c.commessa), c.cliente);
+        for (const c of cicli) aggiungi(c.commessa, c.cliente, c.indirizzo);
+        for (const c of commesse) m.set(chiaveCommessa(c.commessa), { cliente: c.cliente, indirizzo: c.indirizzo }); // Smartsheet prevale
         setClienti(new Map(m));
       })
       .catch(() => undefined);
   }, [cavallette]);
 
-  const trovato = commessa.trim() ? clienti.get(chiaveCommessa(commessa)) ?? null : null;
+  const noto = commessa.trim() ? clienti.get(chiaveCommessa(commessa)) ?? null : null;
+  const trovato = noto?.cliente ?? null;
+  const trovatoInd = noto?.indirizzo ?? null;
   useEffect(() => {
     if (!clienteManuale) setCliente(trovato ?? '');
   }, [trovato, clienteManuale]);
+  useEffect(() => {
+    if (!indirizzoManuale) setIndirizzo(trovatoInd ?? '');
+  }, [trovatoInd, indirizzoManuale]);
 
   const tutte = useMemo(() => new Map(cavallette.filter((c) => !c.restituita).map((c) => [c.numero, c])), [cavallette]);
 
@@ -73,6 +86,7 @@ export default function Imballo() {
         data,
         commessa: commessa.trim(),
         cliente: cliente.trim() || null,
+        indirizzo: indirizzo.trim() || null,
         contenuto: contenuto.trim() || null,
         cavallette: lette.ok,
       });
@@ -80,6 +94,8 @@ export default function Imballo() {
       setCommessa('');
       setCliente('');
       setClienteManuale(false);
+      setIndirizzo('');
+      setIndirizzoManuale(false);
       setContenuto('');
       setTestoCav('');
       await ricarica();
@@ -115,6 +131,17 @@ export default function Imballo() {
             onChange={(e) => {
               setCliente(e.target.value);
               setClienteManuale(true);
+            }}
+          />
+        </label>
+
+        <label>
+          Indirizzo <span className="nota">{trovatoInd && !indirizzoManuale ? '· preso da Smartsheet' : '· facoltativo'}</span>
+          <input
+            value={indirizzo}
+            onChange={(e) => {
+              setIndirizzo(e.target.value);
+              setIndirizzoManuale(true);
             }}
           />
         </label>
