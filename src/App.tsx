@@ -8,6 +8,7 @@ import type { Ruolo } from './lib/types.ts';
 import Login from './pages/Login.tsx';
 import Dashboard from './pages/Dashboard.tsx';
 import Imballo from './pages/Imballo.tsx';
+import Rientro from './pages/Rientro.tsx';
 import Segnalazioni from './pages/Segnalazioni.tsx';
 import Arrivi from './pages/Arrivi.tsx';
 import ImportSmartsheet from './pages/ImportSmartsheet.tsx';
@@ -28,6 +29,7 @@ const STAFF: Ruolo[] = ['admin', 'ufficio', 'logistica', 'amministrazione'];
 const ROTTE: Rotta[] = [
   { path: '/', titolo: 'Cruscotto', ruoli: STAFF, el: () => <Dashboard /> },
   { path: '/imballo', titolo: 'Imballo', ruoli: ['admin', 'ufficio'], el: () => <Imballo /> },
+  { path: '/rientro', titolo: 'Rientro', ruoli: ['admin', 'ufficio'], el: () => <Rientro /> },
   { path: '/segnalazioni', titolo: 'Segnalazioni', ruoli: STAFF, el: () => <Segnalazioni /> },
   { path: '/arrivi', titolo: 'Arrivo vetri', ruoli: ['admin', 'ufficio'], el: () => <Arrivi /> },
   { path: '/smartsheet', titolo: 'Da Smartsheet', ruoli: ['admin', 'ufficio'], el: () => <ImportSmartsheet /> },

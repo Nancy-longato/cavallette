@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Cavalletta, Evento, Luogo, Stato } from '../lib/types.ts';
+import type { Cavalletta, Evento, Stato } from '../lib/types.ts';
 import { caricaEventi, correggiCavalletta, eliminaCavalletta } from '../lib/api.ts';
 import { formattaData } from '../lib/dates.ts';
 import { etichettaStato, giacenza, giorniNelloStato, pronta, testoDa } from '../lib/logica.ts';
@@ -24,12 +24,10 @@ export default function CavallettaDialog({ cavalletta: c, onChiudi, onModificata
   const [errore, setErrore] = useState<string | null>(null);
   const [occupato, setOccupato] = useState(false);
   const [f, setF] = useState({
-    luogo: c.luogo as Luogo,
     stato: c.stato as Stato,
     commessa: c.commessa ?? '',
     cliente: c.cliente ?? '',
     indirizzo: c.indirizzo ?? '',
-    data_consegna: c.data_consegna ?? '',
     note: c.note ?? '',
   });
 
@@ -55,15 +53,16 @@ export default function CavallettaDialog({ cavalletta: c, onChiudi, onModificata
     try {
       const vuoto = (s: string): string | null => (s.trim() === '' ? null : s.trim());
       const patch: Partial<Cavalletta> = {
-        luogo: f.luogo,
         stato: f.stato,
         commessa: vuoto(f.commessa),
         cliente: vuoto(f.cliente),
         indirizzo: vuoto(f.indirizzo),
-        data_consegna: vuoto(f.data_consegna),
         note: vuoto(f.note),
       };
-      if (patch.stato === 'vuota') patch.contenuto = null;
+      if (patch.stato === 'vuota') {
+        // una cavalletta vuota non ha più commessa, cliente e indirizzo: è pronta per essere imballata di nuovo
+        Object.assign(patch, { contenuto: null, commessa: null, cliente: null, indirizzo: null, data_uscita: null, data_consegna: null, luogo: 'piazzale' });
+      }
       await correggiCavalletta(c, patch);
       onModificata();
     } catch (e) {
@@ -109,12 +108,6 @@ export default function CavallettaDialog({ cavalletta: c, onChiudi, onModificata
         ) : (
           <div className="form">
             <p className="nota">Correzione manuale: la modifica viene registrata nello storico.</p>
-            <label>Luogo
-              <select value={f.luogo} onChange={(e) => setF({ ...f, luogo: e.target.value as Luogo })}>
-                <option value="piazzale">Piazzale</option>
-                <option value="cliente">Dal cliente</option>
-              </select>
-            </label>
             <label>Stato
               <select value={f.stato} onChange={(e) => setF({ ...f, stato: e.target.value as Stato })}>
                 <option value="piena_vetri">Piena (vetri)</option>
@@ -125,7 +118,6 @@ export default function CavallettaDialog({ cavalletta: c, onChiudi, onModificata
             <label>Commessa<input value={f.commessa} onChange={(e) => setF({ ...f, commessa: e.target.value })} /></label>
             <label>Cliente<input value={f.cliente} onChange={(e) => setF({ ...f, cliente: e.target.value })} /></label>
             <label>Indirizzo<input value={f.indirizzo} onChange={(e) => setF({ ...f, indirizzo: e.target.value })} /></label>
-            <label>Dal cliente da (data)<input type="date" value={f.data_consegna} onChange={(e) => setF({ ...f, data_consegna: e.target.value })} /></label>
             <label>Note<textarea value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} rows={2} /></label>
             <div className="riga-bottoni">
               <button className="btn btn-primary" disabled={occupato} onClick={() => void salva()}>Salva correzione</button>

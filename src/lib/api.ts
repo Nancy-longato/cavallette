@@ -239,6 +239,36 @@ export async function correggiCavalletta(prima: Cavalletta, patch: Partial<Caval
   ok(await supabase.from('eventi').insert({ cavalletta_id: prima.id, tipo: 'correzione', dettaglio: { cambi } }));
 }
 
+/** Rientro: le cavallette di una commessa sono tornate e si svuotano; perdono commessa e cliente e sono pronte per un nuovo imballo */
+export async function svuotaCavallette(cavallette: Cavalletta[], oggi: string): Promise<void> {
+  const patch = {
+    stato: 'vuota' as const,
+    luogo: 'piazzale' as const,
+    commessa: null,
+    cliente: null,
+    indirizzo: null,
+    contenuto: null,
+    data_uscita: null,
+    data_consegna: null,
+  };
+  for (const c of cavallette) {
+    okTocca(await supabase.from('cavallette').update(patch).eq('id', c.id).eq('restituita', false).select('id'), `Cavalletta ${c.numero}`);
+  }
+  ok(
+    await supabase.from('eventi').insert(
+      cavallette.map((c) => ({
+        cavalletta_id: c.id,
+        tipo: 'rientrata',
+        dettaglio: { commessa: c.commessa, cliente: c.cliente, indirizzo: c.indirizzo, data: oggi, fonte: 'rientro' },
+      })),
+    ),
+  );
+  for (const c of cavallette) {
+    if (!c.commessa) continue;
+    ok(await supabase.from('cicli').update({ fase: 3, data_rientro: oggi }).eq('cavalletta_id', c.id).eq('commessa', c.commessa).select('id'));
+  }
+}
+
 export interface Imballo {
   data: string;
   commessa: string;
