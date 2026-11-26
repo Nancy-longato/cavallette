@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Cavalletta } from '../lib/types.ts';
 import { confrontaNumeri } from '../lib/keys.ts';
 import { formattaData } from '../lib/dates.ts';
-import { etichettaStato, giacenza } from '../lib/logica.ts';
+import { etichettaStato, giacenza, giorniNelloStato, pronta, testoDa } from '../lib/logica.ts';
 import { Badge } from './ui.tsx';
 import type { Tono } from './ui.tsx';
 
@@ -31,8 +31,8 @@ export default function CavallettaTable(props: Props) {
         case 'numero': return c.numero;
         case 'vetreria': return nomeVetreria(c.vetreria);
         case 'stato': return c.stato;
-        case 'commessa': return c.commessa ?? '';
-        case 'cliente': return c.cliente ?? '';
+        case 'commessa': return pronta(c) ? c.commessa ?? '' : '';
+        case 'cliente': return pronta(c) ? c.cliente ?? '' : '';
         case 'arrivo': return c.data_arrivo ?? '';
         case 'giacenza': return giacenza(c, oggi) ?? -1;
       }
@@ -79,11 +79,12 @@ export default function CavallettaTable(props: Props) {
                 <td className="numero">{c.numero}</td>
                 <td>{nomeVetreria(c.vetreria)}</td>
                 <td>
-                  <Badge tono={tonoStato(c)}>{etichettaStato(c, false)}</Badge>
+                  <Badge tono={tonoStato(c)}>{etichettaStato(c)}</Badge>
+                  <span className="fermo">{testoDa(giorniNelloStato(c, oggi))}</span>
                 </td>
-                <td>{c.commessa}</td>
-                <td>{c.cliente}</td>
-                <td>{c.indirizzo}</td>
+                <td>{pronta(c) ? c.commessa : ''}</td>
+                <td>{pronta(c) ? c.cliente : ''}</td>
+                <td>{pronta(c) ? c.indirizzo : ''}</td>
                 <td>{formattaData(c.data_arrivo)}</td>
                 <td className="num">{gg ?? ''}</td>
               </tr>

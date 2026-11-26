@@ -1,18 +1,6 @@
 import type { Cavalletta } from './types.ts';
 import { LONGATO } from './types.ts';
-import { diffDays, giorniLavorativiTra } from './dates.ts';
-
-/** Giorni lavorativi da quando la cavalletta è dal cliente (null se non è dal cliente) */
-export function giorniInCantiere(c: Cavalletta, oggi: string, chiusure: ReadonlySet<string>): number | null {
-  if (c.luogo !== 'cliente' || !c.data_consegna) return null;
-  return giorniLavorativiTra(c.data_consegna, oggi, chiusure);
-}
-
-/** Dal cliente da almeno `soglia` giorni lavorativi: presumibilmente vuota, da andare a ritirare */
-export function daRitirare(c: Cavalletta, oggi: string, chiusure: ReadonlySet<string>, soglia: number): boolean {
-  const g = giorniInCantiere(c, oggi, chiusure);
-  return g !== null && g >= soglia;
-}
+import { diffDays } from './dates.ts';
 
 /** Giorni di calendario da quando la cavalletta del fornitore è in sede (null per le nostre) */
 export function giacenza(c: Cavalletta, oggi: string): number | null {
@@ -20,8 +8,8 @@ export function giacenza(c: Cavalletta, oggi: string): number | null {
   return Math.max(0, diffDays(c.data_arrivo, oggi));
 }
 
-export function etichettaStato(c: Cavalletta, inAllerta: boolean): string {
-  if (inAllerta) return 'Vuota (da ritirare)';
+/** Gli unici tre stati: Vuota, Piena (vetri), Piena (serramenti) */
+export function etichettaStato(c: Cavalletta): string {
   if (c.stato === 'piena_vetri') return 'Piena (vetri)';
   if (c.stato === 'piena_serramenti') return 'Piena (serramenti)';
   return 'Vuota';
@@ -47,4 +35,23 @@ export function provinciaDa(indirizzo: string | null | undefined): string {
   if (nome) return nome;
   if (t.length <= 2) return t.toUpperCase();
   return t.toLowerCase().replace(/(^|[\s'-])\p{L}/gu, (x) => x.toUpperCase());
+}
+
+/** Giorni (di calendario) da quando la cavalletta è nello stato attuale; null se non si sa */
+export function giorniNelloStato(c: Cavalletta, oggi: string): number | null {
+  if (!c.stato_dal) return null;
+  return Math.max(0, diffDays(c.stato_dal, oggi));
+}
+
+/** "da oggi", "da 1 giorno", "da 12 giorni" */
+export function testoDa(giorni: number | null): string {
+  if (giorni === null) return '';
+  if (giorni === 0) return 'da oggi';
+  if (giorni === 1) return 'da 1 giorno';
+  return `da ${giorni} giorni`;
+}
+
+/** Commessa e cliente si vedono solo quando la cavalletta è pronta (piena di serramenti) */
+export function pronta(c: Cavalletta): boolean {
+  return c.stato === 'piena_serramenti';
 }

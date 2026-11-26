@@ -119,7 +119,7 @@ export default function Restituzione() {
                     <label className="spunta disattiva" title="Non è vuota in piazzale">
                       <input type="checkbox" disabled />
                       <span className="numero">{c.numero}</span>
-                      <span className="nota">{etichettaStato(c, false)} · {etichettaLuogo(c)}</span>
+                      <span className="nota">{etichettaStato(c)} · {etichettaLuogo(c)}</span>
                     </label>
                   </li>
                 ))}

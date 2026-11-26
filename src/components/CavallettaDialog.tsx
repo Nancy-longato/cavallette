@@ -2,37 +2,11 @@ import { useEffect, useState } from 'react';
 import type { Cavalletta, Evento, Luogo, Stato } from '../lib/types.ts';
 import { caricaEventi, correggiCavalletta, eliminaCavalletta } from '../lib/api.ts';
 import { formattaData } from '../lib/dates.ts';
-import { etichettaLuogo, etichettaStato, giacenza } from '../lib/logica.ts';
+import { etichettaStato, giacenza, giorniNelloStato, pronta, testoDa } from '../lib/logica.ts';
 import { useDati } from '../lib/dati.tsx';
 import { useAuth } from '../lib/auth.tsx';
 import { Messaggio, dataOra } from './ui.tsx';
-
-const NOMI_EVENTO: Record<string, string> = {
-  arrivata: 'Arrivata dal fornitore',
-  interna: 'Aggiunta (cavalletta interna)',
-  imballata: 'Imballata (commessa abbinata)',
-  consegnata: 'Consegnata al cliente',
-  rientrata: 'Rientrata in piazzale, vuota',
-  non_usata: 'Segnata vuota: non usata in produzione',
-  restituita: 'Restituita alla vetreria',
-  correzione: 'Correzione manuale',
-};
-
-function descriviEvento(e: Evento): string {
-  const d = e.dettaglio as Record<string, unknown>;
-  if (e.tipo === 'correzione') {
-    const cambi = (d.cambi ?? {}) as Record<string, { da: unknown; a: unknown }>;
-    return Object.entries(cambi)
-      .map(([k, v]) => `${k}: ${String(v.da ?? '–')} → ${String(v.a ?? '–')}`)
-      .join(' · ');
-  }
-  const parti: string[] = [];
-  if (d.commessa) parti.push(`commessa ${String(d.commessa)}`);
-  if (d.cliente) parti.push(String(d.cliente));
-  if (d.ddt) parti.push(`DDT ${String(d.ddt)}`);
-  if (d.contenuto) parti.push(String(d.contenuto));
-  return parti.join(' · ');
-}
+import { NOMI_EVENTO, descriviEvento } from '../lib/eventi.ts';
 
 interface Props {
   cavalletta: Cavalletta;
@@ -123,15 +97,13 @@ export default function CavallettaDialog({ cavalletta: c, onChiudi, onModificata
 
         {!modifica ? (
           <dl className="dettagli">
-            <dt>Luogo</dt><dd>{etichettaLuogo(c)}</dd>
-            <dt>Stato</dt><dd>{etichettaStato(c, false)}</dd>
-            {c.commessa && (<><dt>Commessa</dt><dd>{c.commessa}</dd></>)}
-            {c.cliente && (<><dt>Cliente</dt><dd>{c.cliente}</dd></>)}
-            {c.indirizzo && (<><dt>Indirizzo</dt><dd>{c.indirizzo}</dd></>)}
+            <dt>Stato</dt><dd>{etichettaStato(c)} <span className="fermo">{testoDa(giorniNelloStato(c, oggi))}</span></dd>
+            {pronta(c) && c.commessa && (<><dt>Commessa</dt><dd>{c.commessa}</dd></>)}
+            {pronta(c) && c.cliente && (<><dt>Cliente</dt><dd>{c.cliente}</dd></>)}
+            {pronta(c) && c.indirizzo && (<><dt>Indirizzo</dt><dd>{c.indirizzo}</dd></>)}
             {c.contenuto && (<><dt>Contenuto</dt><dd>{c.contenuto}</dd></>)}
             {c.data_arrivo && (<><dt>Arrivata il</dt><dd>{formattaData(c.data_arrivo)}{c.ddt_arrivo ? ` (DDT ${c.ddt_arrivo})` : ''}</dd></>)}
             {gg !== null && (<><dt>Giacenza</dt><dd>{gg} giorni</dd></>)}
-            {c.data_consegna && (<><dt>Dal cliente da</dt><dd>{formattaData(c.data_consegna)}</dd></>)}
             {c.note && (<><dt>Note</dt><dd>{c.note}</dd></>)}
           </dl>
         ) : (

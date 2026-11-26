@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { caricaRestituzioni } from '../lib/api.ts';
+import { caricaProfili, caricaRegistro, caricaRestituzioni } from '../lib/api.ts';
+import type { RigaRegistro } from '../lib/api.ts';
 import type { Cavalletta, Restituzione } from '../lib/types.ts';
-import { formattaData } from '../lib/dates.ts';
+import { addDays, formattaData, oggiRoma } from '../lib/dates.ts';
+import { NOMI_EVENTO, descriviEvento } from '../lib/eventi.ts';
 import { useDati } from '../lib/dati.tsx';
 import CavallettaDialog from '../components/CavallettaDialog.tsx';
 import { Messaggio, Titolo } from '../components/ui.tsx';
 
-export default function Storico() {
+function Restituzioni() {
   const { nomeVetreria } = useDati();
   const [dati, setDati] = useState<{ restituzione: Restituzione; cavallette: Cavalletta[] }[] | null>(null);
   const [errore, setErrore] = useState<string | null>(null);
@@ -26,7 +28,6 @@ export default function Storico() {
 
   return (
     <>
-      <Titolo titolo="Storico restituzioni" sotto="Le cavallette restituite alle vetrerie. Non compaiono più nel cruscotto." />
       {errore && <Messaggio tipo="errore">{errore}</Messaggio>}
       <div className="toolbar">
         <input className="cerca" placeholder="Cerca vetreria o numero cavalletta…" value={cerca} onChange={(e) => setCerca(e.target.value)} />
@@ -54,6 +55,138 @@ export default function Storico() {
         </ul>
       )}
       {aperta && <CavallettaDialog key={aperta.id} cavalletta={aperta} onChiudi={() => setAperta(null)} onModificata={() => setAperta(null)} />}
+    </>
+  );
+}
+
+const ORA = new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit' });
+
+function Registro() {
+  const { nomeVetreria, oggi } = useDati();
+  const [da, setDa] = useState(addDays(oggi, -30));
+  const [a, setA] = useState(oggi);
+  const [tipo, setTipo] = useState('');
+  const [cerca, setCerca] = useState('');
+  const [righe, setRighe] = useState<RigaRegistro[] | null>(null);
+  const [nomi, setNomi] = useState<Map<string, string>>(new Map());
+  const [errore, setErrore] = useState<string | null>(null);
+
+  useEffect(() => {
+    caricaProfili()
+      .then((p) => setNomi(new Map(p.map((x) => [x.id, x.nome || x.email || '']))))
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (!da || !a || da > a) return;
+    setRighe(null);
+    setErrore(null);
+    caricaRegistro(da, a).then(setRighe).catch((e: unknown) => setErrore(e instanceof Error ? e.message : 'Errore di caricamento'));
+  }, [da, a]);
+
+  const filtrate = useMemo(() => {
+    const q = cerca.trim().toLowerCase();
+    return (righe ?? []).filter((r) => {
+      const giorno = oggiRoma(new Date(r.creato_il));
+      if (giorno < da || giorno > a) return false;
+      if (tipo && r.tipo !== tipo) return false;
+      if (!q) return true;
+      const testo = [r.cavallette?.numero, NOMI_EVENTO[r.tipo] ?? r.tipo, descriviEvento(r), r.cavallette ? nomeVetreria(r.cavallette.vetreria) : ''].join(' ').toLowerCase();
+      return testo.includes(q);
+    });
+  }, [righe, da, a, tipo, cerca, nomeVetreria]);
+
+  const perGiorno = useMemo(() => {
+    const m = new Map<string, RigaRegistro[]>();
+    for (const r of filtrate) {
+      const g = oggiRoma(new Date(r.creato_il));
+      m.set(g, [...(m.get(g) ?? []), r]);
+    }
+    return [...m.entries()];
+  }, [filtrate]);
+
+  function scaricaCsv(): void {
+    const esc = (v: string): string => `"${v.replace(/"/g, '""')}"`;
+    const righeCsv = [['Data', 'Ora', 'Cavalletta', 'Vetreria', 'Movimento', 'Dettaglio', 'Chi'].map(esc).join(';')];
+    for (const r of filtrate) {
+      righeCsv.push(
+        [
+          formattaData(oggiRoma(new Date(r.creato_il))),
+          ORA.format(new Date(r.creato_il)),
+          r.cavallette?.numero ?? '',
+          r.cavallette ? nomeVetreria(r.cavallette.vetreria) : '',
+          NOMI_EVENTO[r.tipo] ?? r.tipo,
+          descriviEvento(r),
+          r.utente ? nomi.get(r.utente) ?? '' : '',
+        ].map(esc).join(';'),
+      );
+    }
+    const blob = new Blob(['\ufeff' + righeCsv.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `registro-cavallette_${da}_${a}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  return (
+    <>
+      <div className="toolbar">
+        <label className="nota">Dal <input type="date" value={da} onChange={(e) => setDa(e.target.value)} /></label>
+        <label className="nota">al <input type="date" value={a} onChange={(e) => setA(e.target.value)} /></label>
+        <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
+          <option value="">Tutti i movimenti</option>
+          {Object.entries(NOMI_EVENTO).map(([k, v]) => (
+            <option key={k} value={k}>{v}</option>
+          ))}
+        </select>
+        <input className="cerca" placeholder="Cerca cavalletta, commessa, cliente…" value={cerca} onChange={(e) => setCerca(e.target.value)} />
+        <button className="btn" disabled={filtrate.length === 0} onClick={scaricaCsv}>Scarica CSV</button>
+      </div>
+      {errore && <Messaggio tipo="errore">{errore}</Messaggio>}
+      {righe === null && !errore ? (
+        <p className="vuoto">Caricamento…</p>
+      ) : filtrate.length === 0 ? (
+        <p className="vuoto">Nessun movimento in questo periodo.</p>
+      ) : (
+        <>
+          <p className="nota">{filtrate.length} movimenti. Il registro non si modifica: ogni movimento resta archiviato.</p>
+          {perGiorno.map(([giorno, lista]) => (
+            <section key={giorno} className="card" style={{ marginBottom: 12 }}>
+              <h3 style={{ margin: '0 0 0.5rem' }}>{formattaData(giorno)} <span className="nota">· {lista.length}</span></h3>
+              <div className="scorri">
+                <table className="tabella">
+                  <tbody>
+                    {lista.map((r) => (
+                      <tr key={r.id}>
+                        <td className="nota" style={{ width: 60 }}>{ORA.format(new Date(r.creato_il))}</td>
+                        <td className="numero">{r.cavallette?.numero ?? '?'}</td>
+                        <td>{NOMI_EVENTO[r.tipo] ?? r.tipo}</td>
+                        <td className="sotto">{descriviEvento(r)}</td>
+                        <td className="nota">{r.utente ? nomi.get(r.utente) ?? '' : ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ))}
+        </>
+      )}
+    </>
+  );
+}
+
+export default function Storico() {
+  const [vista, setVista] = useState<'registro' | 'restituzioni'>('registro');
+  return (
+    <>
+      <Titolo titolo="Storico" sotto="Il registro di tutti i movimenti delle cavallette, giorno per giorno." />
+      <div className="segmenti">
+        <button className={`segmento ${vista === 'registro' ? 'attivo' : ''}`} onClick={() => setVista('registro')}>Registro movimenti</button>
+        <button className={`segmento ${vista === 'restituzioni' ? 'attivo' : ''}`} onClick={() => setVista('restituzioni')}>Restituzioni</button>
+      </div>
+      {vista === 'registro' ? <Registro /> : <Restituzioni />}
     </>
   );
 }

@@ -44,7 +44,7 @@ Non mettere mai la chiave `service_role` nell'app.
 | admin (tu) | tutto, correzioni a mano, utenti, impostazioni |
 | ufficio (Nicole) | tutto in lettura, carica DDT/Excel, import Smartsheet |
 | amministrazione | tutto in lettura, può correggere a mano le cavallette |
-| logistica / peso | tutto in lettura, schermata «Da ritirare» con il segnale |
+| logistica / peso | tutto in lettura |
 | magazziniere | solo «Restituzione»: vede solo cavallette vuote in piazzale, nessun dato cliente |
 | nessuno | utente appena creato, non vede nulla finché non gli dai un ruolo |
 
@@ -60,7 +60,6 @@ Non mettere mai la chiave `service_role` nell'app.
   - Cavalletta non in anagrafica → **Segnalazione**
   - Colonne lette per nome: COMMESSA, CLIENTE, INDIRIZZO CANTIERE / PAESE / PROVINCIA, IMBALLAGGIO, N° CAVALLETTE, DDT CONS. RIENTRATO, DATA CONS. RIENTRATO, DDT RIENTRO CAVALLETTA, DAT DDT RIENTRO CAVALLETTA. Le due colonne data sono facoltative: danno la data di consegna al cliente (da cui partono i 10 giorni lavorativi) e la data di rientro; senza date si usa il giorno in cui carichi il file.
   - Al primo import usa il filtro «dal» per saltare lo storico vecchio.
-- **Da ritirare**: dopo 10 giorni *lavorativi* (esclusi sabati, domeniche, festivi italiani e chiusure aziendali) dalla consegna. Soglia e chiusure si cambiano in **Impostazioni**. Il magazziniere non la vede.
 - **Restituzione** (magazziniere): sceglie la vetreria, spunta le cavallette, Invia. Spariscono dal cruscotto e restano nello **Storico** (data + elenco).
 - Le cavallette Longato non si restituiscono mai, ma restano sempre visibili nel cruscotto. «Giacenza» = giorni dall'arrivo per quelle dei fornitori.
 

@@ -31,6 +31,7 @@ export interface Cavalletta {
   indirizzo: string | null;
   data_uscita: string | null;
   data_consegna: string | null;
+  stato_dal: string | null;
   note: string | null;
   restituita: boolean;
   restituita_il: string | null;

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { provinciaDa } from '../src/lib/logica.ts';
 import { normalizzaChiave, spezzaCavallette, chiaveDaCodice, trovaNumero, espandiIntervalli, confrontaNumeri } from '../src/lib/keys.ts';
 import { pasqua, festivi, isLavorativo, giorniLavorativiTra, aggiungiGiorniLavorativi, addDays, diffDays, oggiRoma, formattaData } from '../src/lib/dates.ts';
-import { giorniInCantiere, daRitirare, giacenza } from '../src/lib/logica.ts';
+import { giacenza, giorniNelloStato, testoDa, pronta } from '../src/lib/logica.ts';
 import type { Cavalletta } from '../src/lib/types.ts';
 
 test('normalizzaChiave ignora spazi, trattini e maiuscole', () => {
@@ -98,19 +98,24 @@ function cav(parziale: Partial<Cavalletta>): Cavalletta {
   return {
     id: 'x', numero: 'P1', vetreria: 'P', etichetta: null, contenuto: null, data_arrivo: null, ddt_arrivo: null,
     luogo: 'piazzale', stato: 'vuota', commessa: null, cliente: null, indirizzo: null, data_uscita: null,
-    data_consegna: null, note: null, restituita: false, restituita_il: null, restituzione_id: null,
+    data_consegna: null, stato_dal: null, note: null, restituita: false, restituita_il: null, restituzione_id: null,
     creata_il: '', aggiornata_il: '', ...parziale,
   };
 }
 
-test('da ritirare dopo 10 giorni lavorativi dal cliente', () => {
-  const c = cav({ luogo: 'cliente', data_consegna: '2026-10-19', stato: 'piena_serramenti' });
-  const vuoto = new Set<string>();
-  assert.equal(giorniInCantiere(c, '2026-11-02', vuoto), 10);
-  assert.equal(daRitirare(c, '2026-11-02', vuoto, 10), true);
-  assert.equal(daRitirare(c, '2026-10-30', vuoto, 10), false);
-  assert.equal(daRitirare(cav({ luogo: 'piazzale', data_consegna: '2026-10-01' }), '2026-11-02', vuoto, 10), false);
-  assert.equal(daRitirare(cav({ luogo: 'cliente', data_consegna: null }), '2026-11-02', vuoto, 10), false);
+test('da quanto è nello stato attuale', () => {
+  assert.equal(giorniNelloStato(cav({ stato_dal: '2026-11-01' }), '2026-11-11'), 10);
+  assert.equal(giorniNelloStato(cav({ stato_dal: null }), '2026-11-11'), null);
+  assert.equal(testoDa(0), 'da oggi');
+  assert.equal(testoDa(1), 'da 1 giorno');
+  assert.equal(testoDa(12), 'da 12 giorni');
+  assert.equal(testoDa(null), '');
+});
+
+test('commessa e cliente solo quando è pronta (piena di serramenti)', () => {
+  assert.equal(pronta(cav({ stato: 'piena_serramenti' })), true);
+  assert.equal(pronta(cav({ stato: 'piena_vetri' })), false);
+  assert.equal(pronta(cav({ stato: 'vuota' })), false);
 });
 
 test('giacenza solo per le cavallette dei fornitori', () => {

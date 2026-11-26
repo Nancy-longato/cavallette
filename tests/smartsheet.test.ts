@@ -10,7 +10,7 @@ function cav(id: string, numero: string, extra: Partial<Cavalletta> = {}): Caval
   return {
     id, numero, vetreria: numero.startsWith('P') ? 'P' : 'L', etichetta: null, contenuto: 'DDT 3873', data_arrivo: '2026-11-03',
     ddt_arrivo: '3873', luogo: 'piazzale', stato: 'piena_vetri', commessa: null, cliente: null, indirizzo: null,
-    data_uscita: null, data_consegna: null, note: null, restituita: false, restituita_il: null, restituzione_id: null,
+    data_uscita: null, data_consegna: null, stato_dal: null, note: null, restituita: false, restituita_il: null, restituzione_id: null,
     creata_il: '', aggiornata_il: '', ...extra,
   };
 }

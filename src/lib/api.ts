@@ -62,6 +62,26 @@ export async function caricaEventi(cavallettaId: string): Promise<Evento[]> {
   return ok(await supabase.from('eventi').select('*').eq('cavalletta_id', cavallettaId).order('creato_il', { ascending: false })) ?? [];
 }
 
+export interface RigaRegistro extends Evento {
+  cavallette: { numero: string; vetreria: string } | null;
+}
+
+/** Registro dei movimenti: tutti gli eventi, dal più recente. `da` e `a` sono date (inclusive) */
+export async function caricaRegistro(da: string, a: string): Promise<RigaRegistro[]> {
+  const inizio = new Date(new Date(`${da}T00:00:00+01:00`).getTime() - 2 * 3600 * 1000).toISOString();
+  const fine = new Date(new Date(`${a}T00:00:00+01:00`).getTime() + 26 * 3600 * 1000).toISOString();
+  return leggiTutto<RigaRegistro>((x, y) =>
+    supabase
+      .from('eventi')
+      .select('*, cavallette(numero, vetreria)')
+      .gte('creato_il', inizio)
+      .lt('creato_il', fine)
+      .order('creato_il', { ascending: false })
+      .order('id', { ascending: false })
+      .range(x, y),
+  );
+}
+
 export async function caricaRestituzioni(): Promise<{ restituzione: Restituzione; cavallette: Cavalletta[] }[]> {
   const rest = ok(await supabase.from('restituzioni').select('*').order('creata_il', { ascending: false }).limit(200)) ?? [];
   if (!rest.length) return [];
@@ -237,6 +257,7 @@ export async function registraImballo(i: Imballo): Promise<void> {
     contenuto: i.contenuto,
     data_uscita: i.data,
     data_consegna: null,
+    stato_dal: i.data,
   };
   for (const c of i.cavallette) {
     okTocca(await supabase.from('cavallette').update(patch).eq('id', c.id).eq('restituita', false).select('id'), `Cavalletta ${c.numero}`);

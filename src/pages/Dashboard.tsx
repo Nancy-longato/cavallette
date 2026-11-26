@@ -8,7 +8,7 @@ import CavallettaDialog from '../components/CavallettaDialog.tsx';
 import { Messaggio, Titolo } from '../components/ui.tsx';
 
 type Gruppo = 'tutte' | 'fornitori' | 'interne';
-type Filtro = 'tutti' | 'vetri' | 'serramenti_piazzale' | 'cliente' | 'vuote';
+type Filtro = 'tutti' | 'vuote' | 'vetri' | 'serramenti';
 
 export default function Dashboard() {
   const { cavallette, vetrerie, oggi, nomeVetreria, caricamento, errore, anomalieAperte, ricarica } = useDati();
@@ -27,9 +27,8 @@ export default function Dashboard() {
     switch (f) {
       case 'tutti': return true;
       case 'vetri': return c.stato === 'piena_vetri';
-      case 'serramenti_piazzale': return c.stato === 'piena_serramenti' && c.luogo === 'piazzale';
-      case 'cliente': return c.luogo === 'cliente';
-      case 'vuote': return c.stato === 'vuota' && c.luogo === 'piazzale';
+      case 'serramenti': return c.stato === 'piena_serramenti';
+      case 'vuote': return c.stato === 'vuota';
     }
   };
 
@@ -41,17 +40,17 @@ export default function Dashboard() {
       if (!passa(c, filtro)) return false;
       if (vetreria && c.vetreria !== vetreria) return false;
       if (!q) return true;
-      return [c.numero, c.commessa, c.cliente, c.indirizzo, c.contenuto].some((v) => (v ?? '').toLowerCase().includes(q));
+      const pr = c.stato === 'piena_serramenti';
+      return [c.numero, pr ? c.commessa : null, pr ? c.cliente : null, pr ? c.indirizzo : null, c.contenuto].some((v) => (v ?? '').toLowerCase().includes(q));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [base, filtro, vetreria, cerca]);
 
   const schede: { f: Filtro; titolo: string; classe?: string }[] = [
-    { f: 'tutti', titolo: 'In sede / in giro' },
+    { f: 'tutti', titolo: 'Tutte' },
+    { f: 'vuote', titolo: 'Vuote' },
     { f: 'vetri', titolo: 'Piene di vetri' },
-    { f: 'serramenti_piazzale', titolo: 'Serramenti in piazzale' },
-    { f: 'cliente', titolo: 'Dal cliente' },
-    { f: 'vuote', titolo: 'Vuote in piazzale' },
+    { f: 'serramenti', titolo: 'Piene di serramenti' },
   ];
 
   return (

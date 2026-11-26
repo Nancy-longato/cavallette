@@ -317,3 +317,21 @@ create policy commesse_write on public.commesse for all to authenticated
 -- ---------- PRIMO ADMIN ----------------------------------------------
 -- Dopo aver creato il tuo utente in Authentication > Users, esegui (con la tua email):
 --   update public.profili set ruolo = 'admin' where email = 'tua@email.it';
+
+-- ---------- DA QUANTO È NELLO STATO ATTUALE ----------
+alter table public.cavallette add column if not exists stato_dal date;
+create or replace function public.tocca_stato_dal() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if tg_op = 'INSERT' then
+    if new.stato_dal is null then
+      new.stato_dal := coalesce(new.data_arrivo, (timezone('Europe/Rome', now()))::date);
+    end if;
+  elsif new.stato is distinct from old.stato and new.stato_dal is not distinct from old.stato_dal then
+    new.stato_dal := (timezone('Europe/Rome', now()))::date;
+  end if;
+  return new;
+end $$;
+drop trigger if exists cavallette_stato_dal on public.cavallette;
+create trigger cavallette_stato_dal before insert or update on public.cavallette
+  for each row execute function public.tocca_stato_dal();
