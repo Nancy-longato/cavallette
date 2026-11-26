@@ -43,12 +43,9 @@ export function giorniNelloStato(c: Cavalletta, oggi: string): number | null {
   return Math.max(0, diffDays(c.stato_dal, oggi));
 }
 
-/** "da oggi", "da 1 giorno", "da 12 giorni" */
+/** "0 gg", "1 gg", "13 gg" */
 export function testoDa(giorni: number | null): string {
-  if (giorni === null) return '';
-  if (giorni === 0) return 'da oggi';
-  if (giorni === 1) return 'da 1 giorno';
-  return `da ${giorni} giorni`;
+  return giorni === null ? '' : `${giorni} gg`;
 }
 
 /** Commessa e cliente si vedono solo quando la cavalletta è pronta (piena di serramenti) */

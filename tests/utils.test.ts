@@ -106,9 +106,8 @@ function cav(parziale: Partial<Cavalletta>): Cavalletta {
 test('da quanto è nello stato attuale', () => {
   assert.equal(giorniNelloStato(cav({ stato_dal: '2026-11-01' }), '2026-11-11'), 10);
   assert.equal(giorniNelloStato(cav({ stato_dal: null }), '2026-11-11'), null);
-  assert.equal(testoDa(0), 'da oggi');
-  assert.equal(testoDa(1), 'da 1 giorno');
-  assert.equal(testoDa(12), 'da 12 giorni');
+  assert.equal(testoDa(0), '0 gg');
+  assert.equal(testoDa(13), '13 gg');
   assert.equal(testoDa(null), '');
 });
 
